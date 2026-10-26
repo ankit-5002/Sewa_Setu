@@ -2,11 +2,25 @@
 {% block content %}
 <div class="steps"><b>Step 5 of 6:</b> Document Upload</div>
 <h2>Upload Age Proof Document</h2>
-<p class="note">Accepted documents: Birth certificate, School leaving certificate,
-Voter ID. Accepted formats: <b>JPG or PDF, maximum size 5 MB</b>.</p>
-<form method="post" enctype="multipart/form-data">
-  <label>Select Document</label>
-  <input type="file" name="document">
-  <p><button class="btn" type="submit">Upload &amp; Continue</button></p>
+<p class="text-slate-600 text-sm mb-6">Attach a scanned copy or clear photograph of the applicant's age verification document.</p>
+
+<div class="p-4 rounded-2xl bg-sky-50/80 border border-sky-200 text-sky-950 text-xs sm:text-sm mb-6 leading-relaxed max-w-lg">
+  <p class="font-semibold text-sky-900 m-0 mb-1">Accepted Documents:</p>
+  <ul class="list-disc list-inside space-y-0.5 text-slate-700">
+    <li>Birth Certificate</li>
+    <li>School Leaving Certificate</li>
+    <li>Electoral Photo Identity Card (Voter ID)</li>
+  </ul>
+  <p class="text-[11px] text-slate-500 m-0 mt-2">Accepted formats: <b>JPG, PNG, or PDF</b> (maximum file size: <b>5 MB</b>).</p>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="space-y-4 max-w-lg">
+  <div>
+    <label>Select Document *</label>
+    <input type="file" name="document" accept=".jpg,.jpeg,.png,.pdf" class="file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer" required>
+  </div>
+  <div class="pt-4">
+    <button class="btn" type="submit">Upload &amp; Continue</button>
+  </div>
 </form>
 {% endblock %}

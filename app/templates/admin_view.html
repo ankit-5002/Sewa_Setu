@@ -1,43 +1,89 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Application {{ a[0] }}</h2>
-<p><a href="/admin/applications">&laquo; Back to list</a></p>
-<table class="tbl" style="max-width:640px">
-  <tr><th>Applicant Name</th><td>{{ a[1] }}</td></tr>
-  <tr><th>Mobile</th><td>{{ a[2] }}</td></tr>
-  <tr><th>Date of Birth</th><td>{{ a[3] }}</td></tr>
-  <tr><th>Gender</th><td>{{ a[4] }}</td></tr>
-  <tr><th>Marital Status</th><td>{{ a[5] }}</td></tr>
-  <tr><th>Village</th><td>{{ a[6] }}</td></tr>
-  <tr><th>Block</th><td>{{ a[7] }}</td></tr>
-  <tr><th>Bank Account</th><td>{{ a[8] }}</td></tr>
-  <tr><th>IFSC</th><td>{{ a[9] }}</td></tr>
-  <tr><th>Document</th><td>{{ a[10] or '-' }}</td></tr>
-  <tr><th>Status</th><td><b>{{ a[11] }}</b></td></tr>
-  <tr><th>Submitted</th><td>{{ a[12] }}</td></tr>
-  <tr><th>Decided</th><td>{{ a[13] or '-' }} {% if a[14] %}by {{ a[14] }}{% endif %}</td></tr>
-</table>
+<div class="flex items-center justify-between mb-4">
+  <h2>Application {{ a[0] }}</h2>
+  <a href="/admin/applications" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 no-underline transition-colors">&laquo; Back to list</a>
+</div>
+
+<div class="my-6">
+  <table class="tbl" style="max-width:720px">
+    <tr><th style="width: 200px;">Applicant Name</th><td class="font-semibold text-slate-900">{{ a[1] }}</td></tr>
+    <tr><th>Mobile</th><td class="font-mono">{{ a[2] }}</td></tr>
+    <tr><th>Date of Birth</th><td>{{ a[3] }}</td></tr>
+    <tr><th>Gender</th><td>{{ a[4] }}</td></tr>
+    <tr><th>Marital Status</th><td>{{ a[5] }}</td></tr>
+    <tr><th>Village</th><td>{{ a[6] }}</td></tr>
+    <tr><th>Block</th><td>{{ a[7] }}</td></tr>
+    <tr><th>Bank Account</th><td class="font-mono">{{ a[8] }}</td></tr>
+    <tr><th>IFSC</th><td class="font-mono">{{ a[9] }}</td></tr>
+    <tr><th>Document</th><td>{{ a[10] or '-' }}</td></tr>
+    <tr>
+      <th>Status</th>
+      <td>
+        {% if a[11] == 'APPROVED' %}
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">APPROVED</span>
+        {% elif a[11] == 'REJECTED' %}
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800">REJECTED</span>
+        {% elif a[11] == 'DEEMED_APPROVED' %}
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">DEEMED APPROVED</span>
+        {% elif a[11] == 'WITHDRAWN' %}
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">WITHDRAWN</span>
+        {% else %}
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">{{ a[11] }}</span>
+        {% endif %}
+      </td>
+    </tr>
+    <tr><th>Submitted</th><td class="text-xs text-slate-600">{{ a[12] }}</td></tr>
+    <tr><th>Decided</th><td class="text-xs text-slate-600">{{ a[13] or '-' }} {% if a[14] %}by <b>{{ a[14] }}</b>{% endif %}</td></tr>
+  </table>
+</div>
+
 {% if a[11] == 'PENDING' %}
-<h3>Decision</h3>
-<form method="post" action="/admin/approve/{{ app_id }}" style="display:inline">
-  <input type="text" name="note" placeholder="Note (optional)" style="max-width:300px">
-  <button class="btn" type="submit">Approve</button>
-</form>
-&nbsp;
-<form method="post" action="/admin/reject/{{ app_id }}" style="display:inline">
-  <input type="text" name="note" placeholder="Reason for rejection" style="max-width:300px">
-  <button class="btn" style="background:#a33" type="submit">Reject</button>
-</form>
+<div class="my-8 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs max-w-[720px]">
+  <h3 class="mt-0 mb-4">Official Decision</h3>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- Approve Form -->
+    <form method="post" action="/admin/approve/{{ app_id }}" class="flex flex-col gap-2 p-4 rounded-xl bg-white border border-emerald-200">
+      <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Approve Application</span>
+      <input type="text" name="note" placeholder="Note (optional)" class="text-sm">
+      <button class="btn" style="background:#059669; padding: 0.6rem 1rem;" type="submit">Approve</button>
+    </form>
+
+    <!-- Reject Form -->
+    <form method="post" action="/admin/reject/{{ app_id }}" class="flex flex-col gap-2 p-4 rounded-xl bg-white border border-rose-200">
+      <span class="text-xs font-bold uppercase tracking-wider text-rose-700">Reject Application</span>
+      <input type="text" name="note" placeholder="Reason for rejection" class="text-sm" required>
+      <button class="btn" style="background:#dc2626; padding: 0.6rem 1rem;" type="submit">Reject</button>
+    </form>
+  </div>
+</div>
 {% endif %}
-<h3>Audit trail</h3>
-{% if audit %}
-<table class="tbl" style="max-width:640px">
-<tr><th>When</th><th>Action</th><th>By</th><th>Note</th></tr>
-{% for at, action, actor, note in audit %}
-<tr><td>{{ at }}</td><td>{{ action }}</td><td>{{ actor }}</td><td>{{ note or '' }}</td></tr>
-{% endfor %}
-</table>
-{% else %}
-<p class="note">No audit entries (application predates audit logging).</p>
-{% endif %}
+
+<div class="mt-8">
+  <h3>Audit Trail</h3>
+  {% if audit %}
+  <table class="tbl" style="max-width:720px">
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>Action</th>
+        <th>By</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for at, action, actor, note in audit %}
+      <tr>
+        <td class="text-xs text-slate-500 font-mono">{{ at }}</td>
+        <td><span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-800">{{ action }}</span></td>
+        <td class="text-xs text-slate-600">{{ actor }}</td>
+        <td class="text-sm text-slate-700">{{ note or '-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="note">No audit entries (application predates audit logging).</p>
+  {% endif %}
+</div>
 {% endblock %}

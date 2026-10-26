@@ -1,11 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Departmental Login</h2>
-<form method="post">
-  <label>Username</label>
-  <input type="text" name="username">
-  <label>Password</label>
-  <input type="password" name="password">
-  <p><button class="btn" type="submit">Login</button></p>
+<p class="text-slate-600 text-sm mb-6">Restricted portal for block welfare officers and departmental administrators.</p>
+
+<form method="post" class="space-y-4 max-w-md">
+  <div>
+    <label>Username</label>
+    <input type="text" name="username" placeholder="Officer / Admin username" autocomplete="username" required>
+  </div>
+  <div>
+    <label>Password</label>
+    <input type="password" name="password" placeholder="Enter password" autocomplete="current-password" required>
+  </div>
+  <div class="pt-2">
+    <button class="btn w-full sm:w-auto" type="submit">Login</button>
+  </div>
 </form>
 {% endblock %}

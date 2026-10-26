@@ -1,20 +1,47 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Connected applications</h2>
-<p class="note">Applications currently allowed to act for {{ who }}. Each sign-in ends on its own
-at the time shown; you can end it now.</p>
+<div class="flex items-center justify-between mb-4">
+  <h2>Connected Applications</h2>
+  <a href="/status" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 no-underline transition-colors">&laquo; Status Portal</a>
+</div>
+
+<p class="note">Third-party applications currently authorized to act for <b>{{ who }}</b>. Each sign-in ends automatically at the time shown; you can revoke access at any time.</p>
+
 {% if rows %}
-<table class="tbl" style="max-width:720px">
-<tr><th>Application</th><th>Signed in</th><th>Ends</th><th></th></tr>
-{% for h, name, cid, c, e in rows %}
-<tr><td>{{ name or cid }}</td><td>{{ c }}</td><td>{{ e }}</td>
-<td><form method="post" action="{{ post_url }}" style="display:inline">
-  <input type="hidden" name="token_hash" value="{{ h }}">
-  <button class="btn" style="background:#a33;padding:4px 10px" type="submit">End now</button></form></td></tr>
-{% endfor %}
-</table>
-<form method="post" action="{{ post_url }}"><p><button class="btn" style="background:#555" type="submit">End all</button></p></form>
+<div class="my-6">
+  <table class="tbl" style="max-width:720px">
+    <thead>
+      <tr>
+        <th>Application</th>
+        <th>Signed In</th>
+        <th>Session Ends</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for h, name, cid, c, e in rows %}
+      <tr>
+        <td class="font-semibold text-slate-900">{{ name or cid }}</td>
+        <td class="text-xs text-slate-600 font-mono">{{ c }}</td>
+        <td class="text-xs text-slate-600 font-mono">{{ e }}</td>
+        <td style="text-align: right;">
+          <form method="post" action="{{ post_url }}" style="display:inline">
+            <input type="hidden" name="token_hash" value="{{ h }}">
+            <button class="btn" style="background:#dc2626; padding:0.35rem 0.75rem; font-size: 0.75rem;" type="submit">End now</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<form method="post" action="{{ post_url }}" class="mt-4">
+  <button class="btn" style="background:#475569;" type="submit">End all sessions</button>
+</form>
 {% else %}
-<p>No application is currently signed in for you.</p>
+<div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 text-sm my-6 text-center">
+  No application is currently signed in for you.
+</div>
 {% endif %}
 {% endblock %}

@@ -2,10 +2,15 @@
 {% block content %}
 <div class="steps"><b>Step 1 of 6:</b> Mobile Verification</div>
 <h2>Enter OTP</h2>
-<p class="note">An OTP has been sent to {{ mobile }}.</p>
-<form method="post">
-  <label>OTP</label>
-  <input type="text" name="otp" maxlength="6" style="max-width:160px">
-  <p><button class="btn" type="submit">Verify</button></p>
+<p class="note">An OTP has been sent to <b class="text-slate-800">{{ mobile }}</b>. Check your SMS inbox.</p>
+
+<form method="post" class="space-y-4 max-w-md mt-6">
+  <div>
+    <label>6-Digit Verification Code</label>
+    <input type="text" name="otp" maxlength="6" placeholder="000000" style="max-width:180px; letter-spacing: 0.25em; font-size: 1.15rem; font-weight: bold; text-align: center;" required>
+  </div>
+  <div class="pt-2">
+    <button class="btn" type="submit">Verify &amp; Continue</button>
+  </div>
 </form>
 {% endblock %}

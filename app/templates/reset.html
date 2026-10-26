@@ -1,9 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Reset Password</h2>
-<form method="post">
-  <label>Registered Mobile Number</label>
-  <input type="text" name="mobile">
-  <p><button class="btn" type="submit">Reset Password</button></p>
+<p class="text-slate-600 text-sm mb-6">Enter your registered mobile number to reset your status portal login password.</p>
+
+<form method="post" class="space-y-4 max-w-md">
+  <div>
+    <label>Registered Mobile Number</label>
+    <input type="text" name="mobile" maxlength="10" placeholder="10-digit mobile number" required>
+  </div>
+  <div class="pt-2">
+    <button class="btn w-full sm:w-auto" type="submit">Reset Password</button>
+  </div>
 </form>
+
+<div class="mt-6 pt-4 border-t border-slate-200/80">
+  <a href="/status" class="text-xs text-slate-500 hover:text-slate-800 underline font-medium">&laquo; Back to Status Login</a>
+</div>
 {% endblock %}

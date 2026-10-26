@@ -2,16 +2,26 @@
 {% block content %}
 <div class="steps"><b>Step 3 of 6:</b> Address Details</div>
 <h2>Address Details</h2>
-<form method="post">
-  <label>Village / Town</label>
-  <input type="text" name="village" value="{{ data.get('village','') }}">
-  <label>Block</label>
-  <select name="block">
-    <option value="">--Select--</option>
-    {% for b in blocks %}
-    <option {% if data.get('block')==b %}selected{% endif %}>{{ b }}</option>
-    {% endfor %}
-  </select>
-  <p><button class="btn" type="submit">Save &amp; Continue</button></p>
+<p class="text-slate-600 text-sm mb-6">Enter the permanent residential address within the State of Purvanchal.</p>
+
+<form method="post" class="space-y-4 max-w-lg">
+  <div>
+    <label>Village / Town *</label>
+    <input type="text" name="village" value="{{ data.get('village','') }}" placeholder="Village or town name" required>
+  </div>
+
+  <div>
+    <label>Block *</label>
+    <select name="block" required>
+      <option value="">--Select Block--</option>
+      {% for b in blocks %}
+      <option {% if data.get('block')==b %}selected{% endif %}>{{ b }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="pt-4">
+    <button class="btn" type="submit">Save &amp; Continue</button>
+  </div>
 </form>
 {% endblock %}

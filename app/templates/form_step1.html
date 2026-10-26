@@ -1,29 +1,78 @@
 {% extends "base.html" %}
 {% block content %}
+{% if existing %}
+<div class="max-w-xl py-2">
+  <div class="p-6 rounded-2xl bg-amber-50/90 border border-amber-300 text-amber-900 shadow-sm">
+    <div class="flex items-start gap-4">
+      <div class="p-2.5 rounded-xl bg-amber-100 text-amber-700 shrink-0 mt-0.5">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-amber-950 mt-0 mb-1.5 leading-snug">
+          Application {{ existing[1] }} ({{ existing[2] }}) already exists for this mobile number.
+        </h3>
+        <p class="text-sm text-amber-800 leading-relaxed mb-4">
+          A pending application can be withdrawn from the status portal if you need to apply afresh.
+        </p>
+        <div>
+          <a href="/status" class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-950 bg-white hover:bg-amber-100/80 px-4 py-2.5 rounded-xl border border-amber-300 shadow-xs no-underline transition-colors">
+            Go to Application Status Portal &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
 <div class="steps"><b>Step 2 of 6:</b> Personal Details</div>
 <h2>Personal Details</h2>
-<form method="post">
-  <label>Full Name of Applicant (as per age proof document)</label>
-  <input type="text" name="applicant_name" value="{{ data.get('applicant_name','') }}">
-  <label>Date of Birth (DD/MM/YYYY)</label>
-  <input type="text" name="dob" placeholder="DD/MM/YYYY" value="{{ data.get('dob','') }}">
-  <label>Gender</label>
-  <select name="gender">
-    <option value="">--Select--</option>
-    <option {% if data.get('gender')=='Male' %}selected{% endif %}>Male</option>
-    <option {% if data.get('gender')=='Female' %}selected{% endif %}>Female</option>
-    <option {% if data.get('gender')=='Other' %}selected{% endif %}>Other</option>
-  </select>
-  <label>Marital Status</label>
-  <select name="marital_status">
-    <option value="">--Select--</option>
-    <option {% if data.get('marital_status')=='Married' %}selected{% endif %}>Married</option>
-    <option {% if data.get('marital_status')=='Unmarried' %}selected{% endif %}>Unmarried</option>
-    <option {% if data.get('marital_status')=='Widowed' %}selected{% endif %}>Widowed</option>
-  </select>
-  <label>Late Husband's Name (only if widowed; optional)</label>
-  <input type="text" name="husband_name" value="{{ data.get('husband_name','') }}">
-  <p class="note">Name, date of birth, village, block and bank account are mandatory.</p>
-  <p><button class="btn" type="submit">Save &amp; Continue</button></p>
+<p class="text-slate-600 text-sm mb-6">Enter applicant identity information exactly as shown on the age proof document.</p>
+
+<form method="post" class="space-y-4 max-w-lg">
+  <div>
+    <label>Full Name of Applicant (as per age proof document) *</label>
+    <input type="text" name="applicant_name" value="{{ data.get('applicant_name','') }}" placeholder="e.g. Ram Kumar" required>
+  </div>
+
+  <div>
+    <label>Date of Birth (DD/MM/YYYY) *</label>
+    <input type="text" name="dob" placeholder="DD/MM/YYYY" value="{{ data.get('dob','') }}" style="max-width:200px" required>
+    <p class="text-[12px] text-slate-500 mt-1">Applicant must be at least 60 years of age.</p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label>Gender *</label>
+      <select name="gender" required>
+        <option value="">--Select Gender--</option>
+        <option {% if data.get('gender')=='Male' %}selected{% endif %}>Male</option>
+        <option {% if data.get('gender')=='Female' %}selected{% endif %}>Female</option>
+        <option {% if data.get('gender')=='Other' %}selected{% endif %}>Other</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Marital Status *</label>
+      <select name="marital_status" required>
+        <option value="">--Select Status--</option>
+        <option {% if data.get('marital_status')=='Married' %}selected{% endif %}>Married</option>
+        <option {% if data.get('marital_status')=='Unmarried' %}selected{% endif %}>Unmarried</option>
+        <option {% if data.get('marital_status')=='Widowed' %}selected{% endif %}>Widowed</option>
+      </select>
+    </div>
+  </div>
+
+  <div>
+    <label>Late Husband's Name (only if widowed; optional)</label>
+    <input type="text" name="husband_name" value="{{ data.get('husband_name','') }}" placeholder="Late spouse name">
+  </div>
+
+  <div class="pt-2">
+    <p class="note">Name, date of birth, village, block and bank account are mandatory.</p>
+    <button class="btn" type="submit">Save &amp; Continue</button>
+  </div>
 </form>
+{% endif %}
 {% endblock %}

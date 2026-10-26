@@ -1,16 +1,50 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>About the Scheme</h2>
-<p>The Old Age Pension Scheme is implemented by the Department of Social Welfare,
-Government of Purvanchal, under the State Social Assistance Programme.</p>
-<p>Eligibility: residents of Purvanchal aged 60 years and above. One application per
-eligible citizen. Applications are processed within 15 days as per the Purvanchal
-Right to Public Services Act; applications not processed within the statutory
-period stand approved (deemed approval).</p>
-<p>Pension amount: Rs. 250 per month, credited by DBT to the applicant's bank account.</p>
-<p>Required at application: a mobile number (for OTP), bank account and IFSC, and one
-age proof document (birth certificate, school leaving certificate or Voter ID; JPG,
-PNG or PDF up to 5 MB).</p>
-<p>One active application per applicant. A pending application can be withdrawn
-from the status portal and a fresh one submitted.</p>
+<p class="text-base text-slate-700 leading-relaxed mb-6 font-medium">
+  The Old Age Pension Scheme is implemented by the Department of Social Welfare, Government of Purvanchal, under the State Social Assistance Programme.
+</p>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+  <!-- Key Detail Card 1 -->
+  <div class="p-5 rounded-2xl bg-white/70 border border-slate-200/80 shadow-xs">
+    <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm mb-3">✓</div>
+    <h3 class="mt-0 text-base font-bold text-slate-900">Eligibility &amp; Statutory SLA</h3>
+    <p class="text-slate-600 text-sm leading-relaxed m-0">
+      Residents of Purvanchal aged 60 years and above. One application per eligible citizen. Applications are processed within 15 days as per the Purvanchal Right to Public Services Act; applications not processed within the statutory period stand approved (deemed approval).
+    </p>
+  </div>
+
+  <!-- Key Detail Card 2 -->
+  <div class="p-5 rounded-2xl bg-white/70 border border-slate-200/80 shadow-xs">
+    <div class="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-sm mb-3">₹</div>
+    <h3 class="mt-0 text-base font-bold text-slate-900">Pension Amount</h3>
+    <p class="text-slate-600 text-sm leading-relaxed m-0">
+      Rs. 250 per month, credited directly by Direct Benefit Transfer (DBT) to the applicant's registered bank account.
+    </p>
+  </div>
+
+  <!-- Key Detail Card 3 -->
+  <div class="p-5 rounded-2xl bg-white/70 border border-slate-200/80 shadow-xs">
+    <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm mb-3">📄</div>
+    <h3 class="mt-0 text-base font-bold text-slate-900">Required Documents</h3>
+    <p class="text-slate-600 text-sm leading-relaxed m-0">
+      A mobile number (for OTP), bank account and IFSC, and one age proof document (birth certificate, school leaving certificate or Voter ID; JPG, PNG or PDF up to 5 MB).
+    </p>
+  </div>
+
+  <!-- Key Detail Card 4 -->
+  <div class="p-5 rounded-2xl bg-white/70 border border-slate-200/80 shadow-xs">
+    <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm mb-3">🔄</div>
+    <h3 class="mt-0 text-base font-bold text-slate-900">Single Active Policy</h3>
+    <p class="text-slate-600 text-sm leading-relaxed m-0">
+      One active application per applicant. A pending application can be withdrawn from the status portal and a fresh one submitted.
+    </p>
+  </div>
+</div>
+
+<div class="mt-8 pt-4 border-t border-slate-200/80 flex gap-4">
+  <a href="/apply" class="btn">Apply for Pension</a>
+  <a href="/status" class="inline-flex items-center text-sm font-semibold text-slate-700 hover:text-slate-900 underline ml-2">Check Application Status</a>
+</div>
 {% endblock %}

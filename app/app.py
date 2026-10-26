@@ -317,6 +317,16 @@ def form_step(step):
         return redirect(url_for("apply"))
     if step not in (1, 2, 3):
         abort(404)
+    mobile = session["verified_mobile"]
+    conn = get_db()
+    cur = conn.cursor()
+    existing = active_application(cur, mobile)
+    cur.close(); conn.close()
+    if existing:
+        if step != 1 or request.method == "POST":
+            return redirect(url_for("form_step", step=1))
+        return render_template("form_step1.html", data={}, blocks=BLOCKS,
+                               existing=existing)
     if request.method == "POST":
         data = session.get("form_data", {})
         for k, v in request.form.items():
@@ -326,7 +336,8 @@ def form_step(step):
             return redirect(url_for("form_step", step=step + 1))
         return redirect(url_for("upload"))
     return render_template("form_step%d.html" % step,
-                           data=session.get("form_data", {}), blocks=BLOCKS)
+                           data=session.get("form_data", {}), blocks=BLOCKS,
+                           existing=None)
 
 
 @app.route("/upload", methods=["GET", "POST"])
@@ -334,6 +345,13 @@ def upload():
     if not session.get("verified_mobile"):
         flash("Session expired. Please verify your mobile number again.")
         return redirect(url_for("apply"))
+    mobile = session["verified_mobile"]
+    conn = get_db()
+    cur = conn.cursor()
+    existing = active_application(cur, mobile)
+    cur.close(); conn.close()
+    if existing:
+        return redirect(url_for("form_step", step=1))
     if request.method == "POST":
         f = request.files.get("document")
         if f is None or f.filename == "":
@@ -361,6 +379,13 @@ def declaration():
     if not session.get("verified_mobile"):
         flash("Session expired. Please verify your mobile number again.")
         return redirect(url_for("apply"))
+    mobile = session["verified_mobile"]
+    conn = get_db()
+    cur = conn.cursor()
+    existing = active_application(cur, mobile)
+    cur.close(); conn.close()
+    if existing:
+        return redirect(url_for("form_step", step=1))
     if request.method == "POST":
         return handle_submission()
     # Preview everything before the applicant commits.
@@ -386,7 +411,7 @@ def handle_submission():
         flash("Application %s (%s) already exists for this mobile number. A pending "
               "application can be withdrawn from the status portal if you need to "
               "apply afresh." % (existing[1], existing[2]))
-        return redirect(url_for("index"))
+        return redirect(url_for("form_step", step=1))
 
     new_id, app_no = create_application(cur, mobile, cleaned)
     conn.commit()
@@ -480,10 +505,21 @@ def view_application(app_id):
                 "FROM applications WHERE id = %s AND mobile = %s",
                 (app_id, session.get("portal_mobile")))
     row = cur.fetchone()
-    cur.close(); conn.close()
     if not row:
+        cur.close(); conn.close()
         abort(404)
-    return render_template("application.html", a=row, app_id=app_id)
+    rejection_reason = None
+    if row[8] == 'REJECTED':
+        cur.execute("SELECT note FROM audit_log WHERE application_id = %s AND action = 'REJECTED' "
+                    "ORDER BY at DESC, id DESC LIMIT 1", (app_id,))
+        rej_row = cur.fetchone()
+        if rej_row and rej_row[0] and rej_row[0].strip():
+            rejection_reason = rej_row[0].strip()
+        else:
+            rejection_reason = "Reason not specified by departmental officer."
+    cur.close(); conn.close()
+    return render_template("application.html", a=row, app_id=app_id,
+                           rejection_reason=rejection_reason)
 
 
 @app.route("/application/<int:app_id>/withdraw", methods=["POST"])
@@ -600,22 +636,38 @@ def admin_list():
         return redirect(url_for("admin_login"))
     status = request.args.get("status", "PENDING")
     mobile = request.args.get("mobile", "").strip()
-    page = int(request.args.get("page", 1))
+    try:
+        page = int(request.args.get("page", 1))
+        if page < 1:
+            page = 1
+    except (ValueError, TypeError):
+        page = 1
+    per_page = 50
+    offset = (page - 1) * per_page
     conn = get_db()
     cur = conn.cursor()
     if mobile:
+        cur.execute("SELECT count(*) FROM applications WHERE mobile = %s", (mobile,))
+        total_count = cur.fetchone()[0]
         cur.execute("SELECT id, application_no, applicant_name, mobile, block, status, "
-                    "submitted_at FROM applications WHERE mobile = %s ORDER BY submitted_at ASC",
-                    (mobile,))
-        status = "mobile %s" % mobile
+                    "submitted_at FROM applications WHERE mobile = %s "
+                    "ORDER BY submitted_at DESC, id DESC LIMIT %s OFFSET %s",
+                    (mobile, per_page, offset))
+        display_status = f"Mobile: {mobile}"
     else:
+        cur.execute("SELECT count(*) FROM applications WHERE status = %s", (status,))
+        total_count = cur.fetchone()[0]
         cur.execute("SELECT id, application_no, applicant_name, mobile, block, status, "
                     "submitted_at FROM applications WHERE status = %s "
-                    "ORDER BY submitted_at ASC LIMIT 50 OFFSET %s",
-                    (status, (page - 1) * 50))
+                    "ORDER BY submitted_at DESC, id DESC LIMIT %s OFFSET %s",
+                    (status, per_page, offset))
+        display_status = status
     rows = cur.fetchall()
     cur.close(); conn.close()
-    return render_template("admin_list.html", rows=rows, status=status, page=page, mobile=mobile)
+    total_pages = (total_count + per_page - 1) // per_page if total_count > 0 else 1
+    return render_template("admin_list.html", rows=rows, status=display_status,
+                           raw_status=status, page=page, total_pages=total_pages,
+                           total_count=total_count, per_page=per_page, mobile=mobile)
 
 
 @app.route("/admin/application/<int:app_id>")

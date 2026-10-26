@@ -1,25 +1,384 @@
-{% extends "base.html" %}
-{% block content %}
-<h2>Welcome</h2>
-<p>The Old Age Pension Scheme provides a monthly pension of Rs. 250 to eligible
-senior citizens aged 60 years and above who are residents of Purvanchal.</p>
-{% if hours_left is not none %}
-<p><b>Application window closes in approximately {{ hours_left }} hours</b>
-(midnight, 31 October).</p>
-{% else %}
-<p><b>The application window for this scheme has closed.</b></p>
-{% endif %}
-<p>
-  <a href="/apply"><button class="btn">Apply for Pension</button></a>
-  &nbsp;
-  <a href="/status"><button class="btn" style="background:#555">Check Application Status</button></a>
-</p>
-<h3>How to apply</h3>
-<ol class="note">
-  <li>Verify your mobile number with OTP.</li>
-  <li>Fill the application form (personal details, address, bank details).</li>
-  <li>Upload your age proof document (JPG or PDF, maximum 5 MB).</li>
-  <li>Submit the declaration. Note down your Application Number.</li>
-</ol>
-<p class="note">For assistance visit your nearest Block Development Office.</p>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Sewa Setu — Old Age Pension Portal</title>
+<!-- Tailwind CSS CDN with forms and container-queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter for UI and Playfair Display for the editorial serif headline -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@1,400;1,600&amp;display=swap" rel="stylesheet">
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          },
+          colors: {
+            brand: {
+              lime: '#a3e635',
+              'lime-hover': '#84cc16',
+              dark: '#0f172a',
+              amber: '#f59e0b',
+            }
+          }
+        }
+      }
+    }
+</script>
+<style data-purpose="ambient-backgrounds">
+    /* Subtle elevated cards with soft sky drop shadows */
+    .elevated-card {
+      box-shadow: 0 20px 40px -15px rgba(15, 45, 80, 0.07), 0 0 0 1px rgba(255, 255, 255, 0.8);
+      transition: all 0.3s ease;
+    }
+    .elevated-card:hover {
+      box-shadow: 0 25px 50px -12px rgba(15, 45, 80, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.95);
+    }
+    body {
+      background-color: #e5effa;
+      background-image: 
+        radial-gradient(at 10% 20%, rgba(219, 234, 254, 0.9) 0px, transparent 50%),
+        radial-gradient(at 90% 10%, rgba(224, 231, 255, 0.8) 0px, transparent 50%),
+        radial-gradient(at 50% 80%, rgba(240, 249, 255, 0.9) 0px, transparent 50%),
+        url('https://lh3.googleusercontent.com/aida-public/AB6AXuBkRne-ySMfLIFFQNSmwYCyJ8Y8UtdS4PvgnQvsZVWKtb0Hrw9Zl7tByiMtNeYChbr03RdGFinHV-esc1mGVvV7jb9oIfU6uq1NNFQQocusVGJ9mI2RTSSoFwfwWDCyOKlIoLujAazgUzUd6eEu0U2lOKN8eSMRwvz9iYyhFv0Ym4wJOJOmcNzQNLzedU_ZBNrFIfaN6UbxiEBF2a9Vc5eatX04RXQHyIojR8wWPgQBEkTjXU5wH-Ly');
+      background-size: cover;
+      background-position: center center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+    }
+</style>
+</head>
+<body class="text-slate-800 antialiased font-sans selection:bg-lime-300 selection:text-slate-900 min-h-screen">
+
+<!-- Flash Messages (if any) -->
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="max-w-4xl mx-auto px-4 pt-4 relative z-50">
+      {% for m in messages %}
+        <div class="bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-xl shadow-sm mb-2 flex items-center justify-between text-sm">
+          <span>{{ m }}</span>
+          <button onclick="this.parentElement.remove()" class="text-amber-600 hover:text-amber-800 font-bold ml-4">&times;</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- BEGIN: HeroAndNavigationWrapper -->
+<div class="pb-20 pt-6 px-4 relative">
+
+<!-- BEGIN: FloatingNavBar -->
+<!-- Refined floating capsule navbar styled in ultra-clean frosted glass harmonized with the sky -->
+<header class="max-w-6xl mx-auto px-4 mb-16 relative z-50">
+<nav class="bg-white/85 border border-white/70 rounded-2xl px-6 py-3.5 backdrop-blur-md text-slate-800 flex items-center justify-between shadow-xl shadow-sky-950/5 transition-all duration-200" data-purpose="floating-pill-nav">
+<!-- Left: Emblem Logo & Titles -->
+<a href="/" class="flex items-center gap-3.5 hover:opacity-90 transition-opacity">
+  <div class="w-11 h-11 rounded-xl bg-sky-50/90 border border-sky-200/60 flex items-center justify-center text-teal-600 shadow-sm shrink-0">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24">
+      <path d="M3 21h18"></path>
+      <path d="M3 10h18"></path>
+      <path d="M5 10v11"></path>
+      <path d="M19 10v11"></path>
+      <path d="M9 10v11"></path>
+      <path d="M12 3l9 4.5V10H3V7.5L12 3z"></path>
+      <path d="M12 14v4"></path>
+      <path d="M15 14c0 2-3 4-3 4s-3-2-3-4a3 3 0 0 1 6 0z"></path>
+    </svg>
+  </div>
+  <div class="flex flex-col text-left">
+    <div class="flex items-center gap-2.5">
+      <span class="text-xl font-serif font-bold tracking-tight text-slate-900">Sewa Setu</span>
+      <span class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-400/60 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        LIVE PORTAL
+      </span>
+    </div>
+    <span class="text-xs text-slate-500 font-normal tracking-wide mt-0.5">
+      Department of Social Welfare • Govt. of Purvanchal
+    </span>
+  </div>
+</a>
+
+<!-- Right: Navigation Links, Toggles, Helpline & Profile -->
+<div class="flex items-center gap-3 lg:gap-5">
+  <!-- Accessibility Font Size Toggle -->
+  <div class="hidden sm:flex items-center gap-2 bg-slate-100/80 border border-slate-200/80 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700">
+    <button class="hover:text-slate-900 transition-colors cursor-pointer" title="Decrease text size" type="button" onclick="adjustFontSize(-1)">A-</button>
+    <span class="text-slate-300">|</span>
+    <button class="hover:text-slate-900 transition-colors cursor-pointer" title="Increase text size" type="button" onclick="adjustFontSize(1)">A+</button>
+  </div>
+
+  <!-- Language Switcher -->
+  <div class="hidden sm:flex items-center gap-1.5 bg-slate-100/80 border border-slate-200/80 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 cursor-pointer" title="Language selection">
+    <span class="text-slate-900 font-bold" id="lang-en">EN</span>
+    <span class="text-slate-300 font-normal">|</span>
+    <span class="text-slate-500 hover:text-slate-900 transition-colors" id="lang-hi">हिंदी</span>
+  </div>
+
+  <!-- Toll-Free Helpline Pill -->
+  <a class="bg-amber-50/90 hover:bg-amber-100/90 border border-amber-200/70 px-3.5 py-1.5 rounded-xl flex items-center gap-2.5 transition-colors text-left shadow-sm group" href="tel:1800xxxxxxx">
+    <div class="text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+      </svg>
+    </div>
+    <div class="flex flex-col leading-tight">
+      <span class="text-[10px] text-amber-700 font-medium tracking-wide">Toll-Free</span>
+      <span class="text-xs font-bold text-amber-950 tracking-wide">1800-xxx-xxxx</span>
+    </div>
+  </a>
+</div>
+</nav>
+</header>
+<!-- END: FloatingNavBar -->
+
+<!-- BEGIN: HeroCardSection -->
+<main class="max-w-3xl mx-auto px-4 relative z-20">
+<div class="text-center relative py-6 sm:py-10 max-w-2xl mx-auto" data-purpose="hero-open-section">
+
+  <!-- Year / Scheme Badge -->
+  <div class="inline-block mb-6">
+    <span class="px-3.5 py-1 rounded-full text-xs font-semibold border border-amber-500/40 text-amber-950 bg-amber-50/90 backdrop-blur-sm shadow-xs">
+      Purvanchal Welfare • 2026-27
+    </span>
+  </div>
+
+  <!-- Main Headline in editorial italic serif like Orchestrate in IMAGE_3 -->
+  <h1 class="text-5xl sm:text-6xl md:text-7xl font-serif italic font-normal tracking-tight text-slate-900 mb-5 leading-tight">
+    Old Age Pension Portal
+  </h1>
+
+  <!-- Subheading Description -->
+  <p class="text-slate-700 text-base sm:text-lg max-w-xl mx-auto mb-8 leading-relaxed font-normal">
+    The Old Age Pension Scheme provides a monthly pension of <strong class="text-slate-900 font-semibold">Rs. 250</strong> to eligible senior citizens aged 60 years and above who are residents of Purvanchal.
+  </p>
+
+  <!-- Deadline Notice & Countdown in airy frosted styling -->
+  <div class="mb-9 p-5 sm:p-6 rounded-2xl bg-white/75 border border-white/80 backdrop-blur-md shadow-lg shadow-sky-950/5 max-w-xl mx-auto">
+    <div class="flex items-center justify-center gap-2 mb-4 text-amber-700 font-medium text-xs sm:text-sm">
+      <span class="w-2 h-2 rounded-full bg-amber-500 inline-block shrink-0 animate-pulse"></span>
+      {% if hours_left is not none %}
+        <span>Application window closes in approximately {{ hours_left }} hours (midnight, 31 October).</span>
+      {% else %}
+        <span class="text-red-700 font-semibold">The application window for this scheme has closed.</span>
+      {% endif %}
+    </div>
+
+    <!-- Live Countdown Timer -->
+    <div class="flex items-center justify-center gap-2 sm:gap-3.5" id="countdown-timer">
+      <div class="flex flex-col items-center">
+        <div class="w-14 sm:w-16 h-14 sm:h-16 rounded-xl bg-white/90 border border-slate-200/80 flex items-center justify-center shadow-xs">
+          <span class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 font-sans" id="cd-days">05</span>
+        </div>
+        <span class="block text-[10px] tracking-wider uppercase text-slate-500 mt-1.5 font-semibold">DAYS</span>
+      </div>
+      <span class="text-slate-400 font-bold text-xl -mt-5">:</span>
+      <div class="flex flex-col items-center">
+        <div class="w-14 sm:w-16 h-14 sm:h-16 rounded-xl bg-white/90 border border-slate-200/80 flex items-center justify-center shadow-xs">
+          <span class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 font-sans" id="cd-hours">02</span>
+        </div>
+        <span class="block text-[10px] tracking-wider uppercase text-slate-500 mt-1.5 font-semibold">HOURS</span>
+      </div>
+      <span class="text-slate-400 font-bold text-xl -mt-5">:</span>
+      <div class="flex flex-col items-center">
+        <div class="w-14 sm:w-16 h-14 sm:h-16 rounded-xl bg-white/90 border border-slate-200/80 flex items-center justify-center shadow-xs">
+          <span class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 font-sans" id="cd-minutes">47</span>
+        </div>
+        <span class="block text-[10px] tracking-wider uppercase text-slate-500 mt-1.5 font-semibold">MINUTES</span>
+      </div>
+      <span class="text-slate-400 font-bold text-xl -mt-5">:</span>
+      <div class="flex flex-col items-center">
+        <div class="w-14 sm:w-16 h-14 sm:h-16 rounded-xl bg-white/90 border border-emerald-500/50 flex items-center justify-center shadow-xs">
+          <span class="text-2xl sm:text-3xl font-bold tracking-tight text-emerald-700 font-sans" id="cd-seconds">09</span>
+        </div>
+        <span class="block text-[10px] tracking-wider uppercase text-emerald-700 mt-1.5 font-semibold">SECONDS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action CTA Buttons -->
+  <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto">
+    <a class="w-full sm:flex-1 text-center bg-[#0f172a] hover:bg-slate-900 text-white font-medium text-sm py-3 px-6 rounded-lg transition duration-150 shadow-md active:scale-[0.98] flex items-center justify-center h-11" href="/apply">
+      Apply for Pension
+    </a>
+    <a class="w-full sm:flex-1 text-center bg-white/80 hover:bg-white text-slate-900 border border-slate-300/80 font-medium text-sm py-3 px-6 rounded-lg transition duration-150 shadow-xs active:scale-[0.98] flex items-center justify-center h-11 backdrop-blur-sm" href="/status">
+      Check Application Status
+    </a>
+  </div>
+</div>
+</main>
+<!-- END: HeroCardSection -->
+
+</div>
+<!-- END: HeroAndNavigationWrapper -->
+
+<!-- BEGIN: HowItWorksSection -->
+<!-- Clean frosted white card comfortably situated over the sky background -->
+<section class="max-w-6xl mx-auto px-4 py-16 -mt-8 relative z-30" id="how-it-works">
+<!-- Section Title & Orange Accent Bar -->
+<div class="text-center mb-12">
+  <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 mb-2.5">
+    How to Apply
+  </h2>
+  <div class="w-14 h-1 bg-amber-500 mx-auto rounded-full"></div>
+  <p class="text-sm text-slate-600 mt-3 max-w-md mx-auto">Follow the four simple steps below to submit your pension application.</p>
+</div>
+
+<!-- 4-Column Feature Container with divider lines -->
+<div class="bg-white/75 backdrop-blur-xl rounded-3xl p-4 sm:p-6 lg:p-8 border border-white/80 shadow-xl shadow-sky-950/5 relative" data-purpose="three-step-process-card">
+  <div class="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-200/80">
+    <!-- Step 1 -->
+    <div class="flex flex-col items-center text-center px-4 py-6 sm:px-5 lg:px-6 group">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-100/70 text-sky-800 border border-sky-200/60 mb-5 tracking-wide">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        Step 01
+      </span>
+      <div class="w-20 h-20 mb-5 flex items-center justify-center rounded-2xl bg-sky-50/70 border border-sky-100 group-hover:scale-105 transition-transform shrink-0">
+        <svg class="w-14 h-14" fill="none" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <rect fill="#ecfdf5" height="82" rx="10" stroke="#10b981" stroke-dasharray="3 3" stroke-width="2.5" width="64" x="28" y="20"></rect>
+          <rect fill="#34d399" height="16" rx="5" stroke="#059669" stroke-width="2" width="32" x="44" y="12"></rect>
+          <line stroke="#10b981" stroke-dasharray="2 4" stroke-linecap="round" stroke-width="2.5" x1="40" x2="80" y1="44" y2="44"></line>
+          <line stroke="#10b981" stroke-dasharray="2 4" stroke-linecap="round" stroke-width="2.5" x1="40" x2="76" y1="58" y2="58"></line>
+          <line stroke="#10b981" stroke-dasharray="2 4" stroke-linecap="round" stroke-width="2.5" x1="40" x2="80" y1="72" y2="72"></line>
+          <circle cx="74" cy="86" fill="#10b981" r="8"></circle>
+          <path d="M71 86L73.5 88.5L78 84" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+        </svg>
+      </div>
+      <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-2 tracking-tight">1. Mobile &amp; OTP Verification</h3>
+      <p class="text-slate-600 text-sm leading-relaxed max-w-[220px]">Verify your mobile number with OTP.</p>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="flex flex-col items-center text-center px-4 py-6 sm:px-5 lg:px-6 group">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-100/70 text-sky-800 border border-sky-200/60 mb-5 tracking-wide">
+        <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+        Step 02
+      </span>
+      <div class="w-20 h-20 mb-5 flex items-center justify-center rounded-2xl bg-sky-50/70 border border-sky-100 group-hover:scale-105 transition-transform shrink-0">
+        <svg class="w-14 h-14" fill="none" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24 38L60 18L96 38L60 58L24 38Z" fill="#eff6ff" stroke="#3b82f6" stroke-dasharray="3 3" stroke-width="2.5"></path>
+          <path d="M24 38V76L60 96V58L24 38Z" fill="#dbeafe" stroke="#2563eb" stroke-width="2"></path>
+          <path d="M96 38V76L60 96V58L96 38Z" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="2"></path>
+          <line stroke="#3b82f6" stroke-linecap="round" stroke-width="2" x1="38" x2="52" y1="55" y2="62"></line>
+          <line stroke="#3b82f6" stroke-linecap="round" stroke-width="2" x1="38" x2="52" y1="66" y2="73"></line>
+        </svg>
+      </div>
+      <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-2 tracking-tight">2. Fill Application Form</h3>
+      <p class="text-slate-600 text-sm leading-relaxed max-w-[220px]">Fill the application form (personal details, address, bank details).</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="flex flex-col items-center text-center px-4 py-6 sm:px-5 lg:px-6 group">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50/90 text-amber-950 border border-amber-200/70 mb-5 tracking-wide">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+        Step 03
+      </span>
+      <div class="w-20 h-20 mb-5 flex items-center justify-center rounded-2xl bg-amber-50/50 border border-amber-100 group-hover:scale-105 transition-transform shrink-0">
+        <svg class="w-14 h-14" fill="none" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <rect fill="#fff7ed" height="56" rx="8" stroke="#f97316" stroke-dasharray="3 3" stroke-width="2.5" width="76" x="22" y="22"></rect>
+          <path d="M50 78H70V96H50V78Z" fill="#fed7aa" stroke="#ea580c" stroke-width="2"></path>
+          <path d="M38 96H82" stroke="#c2410c" stroke-linecap="round" stroke-width="3"></path>
+          <circle cx="60" cy="46" fill="#ffedd5" r="10" stroke="#f97316" stroke-width="2"></circle>
+          <path d="M60 42V50M56 46H64" stroke="#ea580c" stroke-linecap="round" stroke-width="2"></path>
+          <line stroke="#fdba74" stroke-dasharray="2 3" stroke-width="2" x1="36" x2="84" y1="64" y2="64"></line>
+        </svg>
+      </div>
+      <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-2 tracking-tight">3. Upload Age Proof</h3>
+      <p class="text-slate-600 text-sm leading-relaxed max-w-[220px]">Upload your age proof document (JPG or PDF, maximum 5 MB).</p>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="flex flex-col items-center text-center px-4 py-6 sm:px-5 lg:px-6 group">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-100/70 text-sky-800 border border-sky-200/60 mb-5 tracking-wide">
+        <span class="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+        Step 04
+      </span>
+      <div class="w-20 h-20 mb-5 flex items-center justify-center rounded-2xl bg-sky-50/70 border border-sky-100 group-hover:scale-105 transition-transform shrink-0">
+        <svg class="w-14 h-14" fill="none" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <rect fill="#f5f3ff" height="44" rx="8" stroke="#8b5cf6" stroke-dasharray="3 3" stroke-width="2.5" width="60" x="20" y="20"></rect>
+          <polygon fill="#8b5cf6" points="34,64 34,74 44,64"></polygon>
+          <circle cx="78" cy="62" fill="#ede9fe" r="16" stroke="#7c3aed" stroke-width="2"></circle>
+          <path d="M62 92C62 83.7157 68.7157 77 77 77H80C88.2843 77 95 83.7157 95 92V96H62V92Z" fill="#ddd6fe" stroke="#6d28d9" stroke-dasharray="2 2" stroke-width="2"></path>
+          <path d="M36 36L44 44L64 28" stroke="#8b5cf6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+        </svg>
+      </div>
+      <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-2 tracking-tight">4. Submit &amp; Track</h3>
+      <p class="text-slate-600 text-sm leading-relaxed max-w-[220px]">Submit the declaration. Note down your Application Number.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Help Desk Banner Notice in soft sky blue -->
+<div class="mt-8 bg-sky-50/85 backdrop-blur-md border border-sky-200/70 rounded-2xl px-6 py-3.5 flex items-center justify-center text-xs sm:text-sm text-sky-950 w-fit max-w-full mx-auto gap-3 shadow-sm">
+  <span class="w-8 h-8 rounded-full bg-sky-200/70 text-sky-800 flex items-center justify-center font-bold shrink-0">ℹ</span>
+  <span class="text-slate-700 font-medium text-center">For assistance visit your nearest <strong class="text-slate-900 font-semibold">Block Development Office</strong>.</span>
+</div>
+</section>
+<!-- END: HowItWorksSection -->
+
+<!-- BEGIN: MainFooter -->
+<footer class="py-10 mt-8 text-center text-sm">
+  <div class="max-w-4xl mx-auto px-4">
+    <div class="mb-1.5 text-sm text-slate-700">
+      <a class="text-[#0b3d6e] hover:text-[#072545] underline font-normal mx-2" href="/">Home</a>
+      <span class="text-slate-600">|</span>
+      <a class="text-[#0b3d6e] hover:text-[#072545] underline font-normal mx-2" href="/about">About the Scheme</a>
+      <span class="text-slate-600">|</span>
+      <a class="text-[#0b3d6e] hover:text-[#072545] underline font-normal mx-2" href="/status">Application Status</a>
+    </div>
+    <p class="text-slate-600 text-sm font-normal m-0">
+      Department of Social Welfare, Government of Purvanchal.
+    </p>
+  </div>
+</footer>
+<!-- END: MainFooter -->
+
+<!-- Interactive Scripts: Font sizing & Live countdown -->
+<script>
+  // Accessibility Font Resizing
+  let currentZoom = 100;
+  function adjustFontSize(delta) {
+    currentZoom = Math.min(Math.max(currentZoom + (delta * 10), 80), 130);
+    document.documentElement.style.fontSize = currentZoom + '%';
+  }
+
+  // Live Countdown to Scheme Deadline: 2026-10-31 23:59:59 IST
+  (function initCountdown() {
+    // 31 Oct 2026 23:59:59 IST is UTC +05:30 -> 2026-10-31T18:29:59Z
+    const deadline = new Date("2026-10-31T23:59:59+05:30").getTime();
+
+    function update() {
+      const now = new Date().getTime();
+      let diff = deadline - now;
+
+      if (diff <= 0) {
+        document.getElementById("cd-days").textContent = "00";
+        document.getElementById("cd-hours").textContent = "00";
+        document.getElementById("cd-minutes").textContent = "00";
+        document.getElementById("cd-seconds").textContent = "00";
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / 1000 / 60) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      document.getElementById("cd-days").textContent = String(days).padStart(2, '0');
+      document.getElementById("cd-hours").textContent = String(hours).padStart(2, '0');
+      document.getElementById("cd-minutes").textContent = String(minutes).padStart(2, '0');
+      document.getElementById("cd-seconds").textContent = String(seconds).padStart(2, '0');
+    }
+
+    update();
+    setInterval(update, 1000);
+  })();
+</script>
+
+</body>
+</html>
