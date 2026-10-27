@@ -74,12 +74,28 @@ except Exception:
     pass
 
 
+from urllib.parse import quote_plus, unquote
+
+def format_db_url(url):
+    if not url:
+        return url
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    prefix, _, rest = url.partition("://")
+    if "@" in rest:
+        auth_part, host_part = rest.rsplit("@", 1)
+        if ":" in auth_part:
+            user, password = auth_part.split(":", 1)
+            clean_pw = unquote(password)
+            encoded_pw = quote_plus(clean_pw)
+            url = f"{prefix}://{user}:{encoded_pw}@{host_part}"
+    return url
+
+
 def get_db():
     db_url = os.environ.get("DATABASE_URL")
     if db_url:
-        if db_url.startswith("postgres://"):
-            db_url = db_url.replace("postgres://", "postgresql://", 1)
-        return psycopg2.connect(db_url)
+        return psycopg2.connect(format_db_url(db_url))
     return psycopg2.connect(
         host=os.environ.get("DB_HOST", config.get("database", "host")),
         port=os.environ.get("DB_PORT", config.get("database", "port")),
@@ -87,6 +103,7 @@ def get_db():
         user=os.environ.get("DB_USER", config.get("database", "user")),
         password=os.environ.get("DB_PASSWORD", config.get("database", "password")),
     )
+
 
 
 def init_db_if_needed():
@@ -128,16 +145,27 @@ _FALLBACK_SMS = []
 
 
 def send_sms(mobile, text):
-    _FALLBACK_SMS.append({
-        "to": mobile,
-        "body": text,
-        "sent_at": datetime.now().strftime("%H:%M:%S")
-    })
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO sms_logs (mobile, text, created_at) VALUES (%s, %s, %s)",
+                    (mobile, text, datetime.now()))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        app.logger.warning("Could not persist SMS to database: %s" % e)
+        _FALLBACK_SMS.append({
+            "to": mobile,
+            "body": text,
+            "sent_at": datetime.now().strftime("%H:%M:%S")
+        })
+
     try:
         requests.post(SMS_GATEWAY_URL + "/api/send",
-                      json={"to": mobile, "text": text}, timeout=3)
-    except Exception as e:
-        app.logger.info("External SMS gateway skipped or unavailable: %s" % e)
+                      json={"to": mobile, "text": text}, timeout=1)
+    except Exception:
+        pass
 
 
 def deadline_remaining():
@@ -273,30 +301,166 @@ def about():
 @app.route("/__gateway/", defaults={"subpath": ""})
 @app.route("/__gateway/<path:subpath>")
 def gateway_proxy(subpath):
-    # Convenience proxy to the internal SMS gateway, with fallback to in-memory store
-    try:
-        r = requests.get(SMS_GATEWAY_URL + "/" + subpath,
-                         params=request.args, timeout=2)
-        return (r.content, r.status_code,
-                {"Content-Type": r.headers.get("Content-Type", "text/html")})
-    except Exception:
-        if subpath == "messages":
-            mobile = request.args.get("mobile")
-            res = _FALLBACK_SMS
+    subpath = (subpath or "").strip("/")
+
+    # Check if API request for messages (JSON polling)
+    if subpath in ("messages", "api/messages"):
+        mobile = request.args.get("mobile") or request.args.get("to")
+        msgs = []
+        try:
+            conn = get_db()
+            cur = conn.cursor()
             if mobile:
-                res = [m for m in res if m.get("to") == mobile]
-            return jsonify(res)
-        rows_html = "".join([
-            f"<tr><td>{i+1}</td><td>{m.get('to')}</td><td>{m.get('body')}</td><td>{m.get('sent_at')}</td><td><span style='color:green;font-weight:bold'>Delivered</span></td></tr>"
-            for i, m in enumerate(reversed(_FALLBACK_SMS))
-        ])
-        html = f"""<!doctype html><html><head><title>Sewa Setu - SMS Gateway Console</title>
-        <meta http-equiv="refresh" content="5">
-        <style>body{{font-family:system-ui,-apple-system,sans-serif;margin:24px;background:#f8fafc;color:#1e293b}}table{{border-collapse:collapse;width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)}}th,td{{border:1px solid #e2e8f0;padding:10px 14px;text-align:left;font-size:14px}}th{{background:#f1f5f9;font-weight:600}}</style>
-        </head><body><h2 style="color:#0f172a">PurvSMS Gateway Inbox (Simulation)</h2>
-        <p style="color:#64748b">Simulated SMS inbox for cloud deployment. Auto-refreshes every 5s.</p>
-        <table><tr><th>#</th><th>To</th><th>Message</th><th>Sent At</th><th>Status</th></tr>{rows_html if rows_html else '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:24px">No SMS sent yet</td></tr>'}</table></body></html>"""
-        return (html, 200, {"Content-Type": "text/html"})
+                cur.execute("SELECT id, mobile, text, created_at FROM sms_logs WHERE mobile = %s ORDER BY id DESC LIMIT 20", (mobile,))
+            else:
+                cur.execute("SELECT id, mobile, text, created_at FROM sms_logs ORDER BY id DESC LIMIT 50")
+            for r in cur.fetchall():
+                msgs.append({
+                    "id": r[0], "to": r[1], "text": r[2],
+                    "delivered": True, "sent_at": r[3].isoformat() if r[3] else None
+                })
+            # Fallback to otps if sms_logs was empty
+            if not msgs:
+                if mobile:
+                    cur.execute("SELECT id, mobile, code, created_at FROM otps WHERE mobile = %s ORDER BY id DESC LIMIT 20", (mobile,))
+                else:
+                    cur.execute("SELECT id, mobile, code, created_at FROM otps ORDER BY id DESC LIMIT 50")
+                for r in cur.fetchall():
+                    msgs.append({
+                        "id": r[0], "to": r[1],
+                        "text": f"Your Sewa Setu OTP is {r[2]}. Valid for 5 minutes.",
+                        "delivered": True, "sent_at": r[3].isoformat() if r[3] else None
+                    })
+            cur.close()
+            conn.close()
+        except Exception as e:
+            app.logger.warning("Gateway API DB error: %s" % e)
+        return jsonify({"messages": msgs})
+
+    # Web UI Console
+    messages = []
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        # 1. Fetch from sms_logs
+        cur.execute("SELECT id, mobile, text, created_at FROM sms_logs ORDER BY id DESC LIMIT 100")
+        for r in cur.fetchall():
+            messages.append({"id": f"sms-{r[0]}", "to": r[1], "text": r[2], "created_at": r[3]})
+
+        # 2. Also fetch from otps table so existing OTPs are never missed
+        cur.execute("SELECT id, mobile, code, created_at FROM otps ORDER BY id DESC LIMIT 50")
+        existing_signatures = {(m["to"], m["text"]) for m in messages}
+        for r in cur.fetchall():
+            text = f"Your Sewa Setu OTP is {r[2]}. Valid for 5 minutes."
+            if (r[1], text) not in existing_signatures:
+                messages.append({"id": f"otp-{r[0]}", "to": r[1], "text": text, "created_at": r[3]})
+
+        # Sort all messages by timestamp descending
+        messages.sort(key=lambda x: x["created_at"] or datetime.min, reverse=True)
+        cur.close()
+        conn.close()
+    except Exception as e:
+        app.logger.warning("Gateway Console DB error: %s" % e)
+        messages = [{"id": f"fallback-{i+1}", "to": m.get("to"), "text": m.get("body"), "created_at": None} for i, m in enumerate(reversed(_FALLBACK_SMS))]
+
+    now = datetime.now()
+    rows = []
+    for i, m in enumerate(messages[:50]):
+        created_at = m.get("created_at")
+        sent_str = created_at.strftime("%H:%M:%S (%d %b)") if created_at else "Just now"
+
+        status_badge = '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:9999px;font-size:12px;font-weight:600;background:#dcfce7;color:#15803d"><span style="width:7px;height:7px;border-radius:50%;background:#22c55e"></span> Delivered</span>'
+
+        if created_at and "OTP" in (m.get("text") or ""):
+            age_sec = (now - created_at).total_seconds()
+            if age_sec <= OTP_VALIDITY_SECONDS:
+                mins_left = max(1, int((OTP_VALIDITY_SECONDS - age_sec) // 60))
+                status_badge = f'<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:9999px;font-size:12px;font-weight:600;background:#e0f2fe;color:#0369a1"><span style="width:7px;height:7px;border-radius:50%;background:#0284c7"></span> Active (~{mins_left}m left)</span>'
+            else:
+                status_badge = '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:9999px;font-size:12px;font-weight:500;background:#f1f5f9;color:#64748b">Expired</span>'
+
+        text_html = m.get("text", "")
+        text_html = re.sub(r'\b(\d{6})\b', r'<strong style="font-size:17px;letter-spacing:1.5px;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:6px;border:1px solid #bfdbfe">\1</strong>', text_html)
+
+        rows.append(f"""<tr>
+            <td style="color:#64748b;font-weight:500">{i+1}</td>
+            <td style="font-weight:600;color:#0f172a">{m.get('to')}</td>
+            <td>{text_html}</td>
+            <td style="color:#475569">{sent_str}</td>
+            <td>{status_badge}</td>
+        </tr>""")
+
+    rows_html = "".join(rows) if rows else '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:32px">No SMS messages sent yet. Submit an application form to trigger an OTP!</td></tr>'
+
+    html = f"""<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PurvSMS Gateway Console (Persistent Simulation)</title>
+    <meta http-equiv="refresh" content="5">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; }}
+        body {{ background: #f8fafc; color: #1e293b; padding: 32px 20px; }}
+        .container {{ max-width: 1080px; margin: 0 auto; }}
+        .header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }}
+        .header h1 {{ font-size: 22px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 10px; }}
+        .badge-live {{ display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }}
+        .pulse {{ width: 8px; height: 8px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite; }}
+        @keyframes pulse {{ 0% {{ opacity: 1; }} 50% {{ opacity: 0.3; }} 100% {{ opacity: 1; }} }}
+        .card {{ background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); overflow: hidden; }}
+        .card-header {{ padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #64748b; display: flex; justify-content: space-between; align-items: center; }}
+        table {{ width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }}
+        th {{ background: #f8fafc; color: #475569; font-weight: 600; padding: 14px 18px; border-bottom: 1px solid #e2e8f0; }}
+        td {{ padding: 14px 18px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }}
+        tr:hover {{ background: #f8fafc; }}
+        .info-bar {{ margin-top: 16px; padding: 12px 18px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 12px; font-size: 13px; color: #1e40af; display: flex; align-items: center; gap: 8px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>PurvSMS Gateway Console</h1>
+                <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Shared Persistent SMS & OTP Simulation (Database-backed)</p>
+            </div>
+            <div class="badge-live">
+                <span class="pulse"></span> Auto-updating every 5s
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span>Recent Incoming & Outgoing Dispatches</span>
+                <span style="font-size: 12px;">Auto-synced with PostgreSQL</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">#</th>
+                        <th style="width: 140px;">Recipient</th>
+                        <th>Message / OTP Payload</th>
+                        <th style="width: 170px;">Sent Time</th>
+                        <th style="width: 150px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows_html}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-bar">
+            <span>💡</span>
+            <span><strong>Tip:</strong> All OTPs are persisted in the database. You can refresh this tab as often as you want—messages will stay saved and will not disappear.</span>
+        </div>
+    </div>
+</body>
+</html>"""
+    return (html, 200, {"Content-Type": "text/html"})
 
 
 # ---------------------------------------------------------------------------

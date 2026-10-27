@@ -28,12 +28,28 @@ SLA_DAYS = config.getint("pension", "sla_days")
 SMS_GATEWAY_URL = config.get("app", "sms_gateway_url")
 
 
+from urllib.parse import quote_plus, unquote
+
+def format_db_url(url):
+    if not url:
+        return url
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    prefix, _, rest = url.partition("://")
+    if "@" in rest:
+        auth_part, host_part = rest.rsplit("@", 1)
+        if ":" in auth_part:
+            user, password = auth_part.split(":", 1)
+            clean_pw = unquote(password)
+            encoded_pw = quote_plus(clean_pw)
+            url = f"{prefix}://{user}:{encoded_pw}@{host_part}"
+    return url
+
+
 def main():
     db_url = os.environ.get("DATABASE_URL")
     if db_url:
-        if db_url.startswith("postgres://"):
-            db_url = db_url.replace("postgres://", "postgresql://", 1)
-        conn = psycopg2.connect(db_url)
+        conn = psycopg2.connect(format_db_url(db_url))
     else:
         conn = psycopg2.connect(
             host=config.get("database", "host"),

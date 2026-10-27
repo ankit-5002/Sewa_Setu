@@ -36,6 +36,14 @@ CREATE TABLE IF NOT EXISTS otps (
     created_at TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS sms_logs (
+    id         SERIAL PRIMARY KEY,
+    mobile     VARCHAR(15),
+    text       TEXT,
+    created_at TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_sms_logs_mobile ON sms_logs(mobile);
+
 CREATE INDEX IF NOT EXISTS idx_app_mobile ON applications(mobile);
 CREATE INDEX IF NOT EXISTS idx_app_status ON applications(status);
 
