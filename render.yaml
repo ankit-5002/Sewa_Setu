@@ -1,0 +1,29 @@
+databases:
+  - name: sewasetu-db
+    databaseName: sewasetu
+    user: sewasetu
+    plan: free
+    region: oregon
+    postgresMajorVersion: "15"
+
+services:
+  - type: web
+    name: sewasetu-portal
+    runtime: docker
+    dockerfilePath: ./app/Dockerfile
+    dockerContext: ./app
+    plan: free
+    region: oregon
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sewasetu-db
+          property: connectionString
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PORT
+        value: "8000"

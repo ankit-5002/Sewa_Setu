@@ -1,16 +1,19 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sewa Setu — Old Age Pension Portal</title>
-<!-- Tailwind CSS CDN with forms and container-queries -->
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<!-- Google Fonts: Inter for UI and Playfair Display for headers -->
-<link href="https://fonts.googleapis.com" rel="preconnect">
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@1,400;1,600&amp;display=swap" rel="stylesheet">
-<script data-purpose="tailwind-config">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sewa Setu — Old Age Pension Portal</title>
+  <!-- Tailwind CSS CDN with forms and container-queries -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <!-- Google Fonts: Inter for UI and Playfair Display for headers -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@1,400;1,600&amp;display=swap"
+    rel="stylesheet">
+  <script data-purpose="tailwind-config">
     tailwind.config = {
       theme: {
         extend: {
@@ -29,386 +32,404 @@
         }
       }
     }
-</script>
-<style>
-  body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    margin: 0;
-    color: #1e293b;
-    background-color: #e5effa;
-    background-image: 
-      radial-gradient(at 10% 20%, rgba(219, 234, 254, 0.9) 0px, transparent 50%),
-      radial-gradient(at 90% 10%, rgba(224, 231, 255, 0.8) 0px, transparent 50%),
-      radial-gradient(at 50% 80%, rgba(240, 249, 255, 0.9) 0px, transparent 50%),
-      url('https://lh3.googleusercontent.com/aida-public/AB6AXuBkRne-ySMfLIFFQNSmwYCyJ8Y8UtdS4PvgnQvsZVWKtb0Hrw9Zl7tByiMtNeYChbr03RdGFinHV-esc1mGVvV7jb9oIfU6uq1NNFQQocusVGJ9mI2RTSSoFwfwWDCyOKlIoLujAazgUzUd6eEu0U2lOKN8eSMRwvz9iYyhFv0Ym4wJOJOmcNzQNLzedU_ZBNrFIfaN6UbxiEBF2a9Vc5eatX04RXQHyIojR8wWPgQBEkTjXU5wH-Ly');
-    background-size: cover;
-    background-position: center center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-    min-height: 100vh;
-  }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      color: #1e293b;
+      background-color: #e5effa;
+      background-image:
+        radial-gradient(at 10% 20%, rgba(219, 234, 254, 0.9) 0px, transparent 50%),
+        radial-gradient(at 90% 10%, rgba(224, 231, 255, 0.8) 0px, transparent 50%),
+        radial-gradient(at 50% 80%, rgba(240, 249, 255, 0.9) 0px, transparent 50%),
+        url('https://lh3.googleusercontent.com/aida-public/AB6AXuBkRne-ySMfLIFFQNSmwYCyJ8Y8UtdS4PvgnQvsZVWKtb0Hrw9Zl7tByiMtNeYChbr03RdGFinHV-esc1mGVvV7jb9oIfU6uq1NNFQQocusVGJ9mI2RTSSoFwfwWDCyOKlIoLujAazgUzUd6eEu0U2lOKN8eSMRwvz9iYyhFv0Ym4wJOJOmcNzQNLzedU_ZBNrFIfaN6UbxiEBF2a9Vc5eatX04RXQHyIojR8wWPgQBEkTjXU5wH-Ly');
+      background-size: cover;
+      background-position: center center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      min-height: 100vh;
+    }
 
-  /* Frosted Glass Content Container */
-  .container {
-    max-width: 1280px;
-    width: 100%;
-    margin: 0 auto;
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    border-radius: 1.5rem;
-    padding: 2.25rem 2.5rem;
-    box-shadow: 0 20px 40px -15px rgba(15, 45, 80, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.8);
-    box-sizing: border-box;
-  }
+    /* Frosted Glass Content Container */
+    .container {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 1.5rem;
+      padding: 2.25rem 2.5rem;
+      box-shadow: 0 20px 40px -15px rgba(15, 45, 80, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.8);
+      box-sizing: border-box;
+    }
 
-  /* Headings - Simple non-italic modern sans-serif */
-  h2 {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 1.75rem;
-    font-weight: 700;
-    font-style: normal;
-    color: #0f172a;
-    margin-top: 0;
-    margin-bottom: 1.25rem;
-    letter-spacing: -0.025em;
-    line-height: 1.25;
-  }
+    /* Headings - Simple non-italic modern sans-serif */
+    h2 {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+      font-style: normal;
+      color: #0f172a;
+      margin-top: 0;
+      margin-bottom: 1.25rem;
+      letter-spacing: -0.025em;
+      line-height: 1.25;
+    }
 
-  h3 {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 1.15rem;
-    font-weight: 700;
-    font-style: normal;
-    color: #1e293b;
-    margin-top: 1.75rem;
-    margin-bottom: 0.75rem;
-    letter-spacing: -0.01em;
-  }
+    h3 {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      font-style: normal;
+      color: #1e293b;
+      margin-top: 1.75rem;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.01em;
+    }
 
-  p {
-    line-height: 1.6;
-    color: #334155;
-    margin: 0.75rem 0;
-  }
+    p {
+      line-height: 1.6;
+      color: #334155;
+      margin: 0.75rem 0;
+    }
 
-  /* Form Labels & Controls */
-  label {
-    display: block;
-    margin: 1.15rem 0 0.35rem;
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: #334155;
-  }
+    /* Form Labels & Controls */
+    label {
+      display: block;
+      margin: 1.15rem 0 0.35rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #334155;
+    }
 
-  input[type=text],
-  input[type=password],
-  input[type=file],
-  select {
-    width: 100%;
-    max-width: 440px;
-    padding: 0.65rem 0.9rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 0.75rem;
-    font-size: 0.9375rem;
-    background: rgba(255, 255, 255, 0.95);
-    color: #0f172a;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-    outline: none;
-    box-sizing: border-box;
-  }
+    input[type=text],
+    input[type=password],
+    input[type=file],
+    select {
+      width: 100%;
+      max-width: 440px;
+      padding: 0.65rem 0.9rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.75rem;
+      font-size: 0.9375rem;
+      background: rgba(255, 255, 255, 0.95);
+      color: #0f172a;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      outline: none;
+      box-sizing: border-box;
+    }
 
-  input[type=text]:focus,
-  input[type=password]:focus,
-  select:focus {
-    border-color: #0f172a;
-    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
-    background: #ffffff;
-  }
+    input[type=text]:focus,
+    input[type=password]:focus,
+    select:focus {
+      border-color: #0f172a;
+      box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+      background: #ffffff;
+    }
 
-  input[type=checkbox] {
-    accent-color: #0f172a;
-    width: 1.1rem;
-    height: 1.1rem;
-    vertical-align: middle;
-    margin-right: 0.4rem;
-  }
+    input[type=checkbox] {
+      accent-color: #0f172a;
+      width: 1.1rem;
+      height: 1.1rem;
+      vertical-align: middle;
+      margin-right: 0.4rem;
+    }
 
-  /* Buttons */
-  .btn {
-    background: #0f172a;
-    color: #ffffff;
-    border: none;
-    border-radius: 0.75rem;
-    padding: 0.65rem 1.5rem;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-  }
+    /* Buttons */
+    .btn {
+      background: #0f172a;
+      color: #ffffff;
+      border: none;
+      border-radius: 0.75rem;
+      padding: 0.65rem 1.5rem;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
 
-  .btn:hover {
-    background: #1e293b;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.15);
-    color: #ffffff;
-    text-decoration: none;
-  }
+    .btn:hover {
+      background: #1e293b;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.15);
+      color: #ffffff;
+      text-decoration: none;
+    }
 
-  .btn:active {
-    transform: scale(0.98);
-  }
+    .btn:active {
+      transform: scale(0.98);
+    }
 
-  /* Danger Button Overrides */
-  .btn[style*="#a33"],
-  .btn[style*="background:#a33"],
-  .btn[style*="background: #a33"] {
-    background: #dc2626 !important;
-    color: #ffffff !important;
-  }
-  .btn[style*="#a33"]:hover,
-  .btn[style*="background:#a33"]:hover {
-    background: #b91c1c !important;
-  }
+    /* Danger Button Overrides */
+    .btn[style*="#a33"],
+    .btn[style*="background:#a33"],
+    .btn[style*="background: #a33"] {
+      background: #dc2626 !important;
+      color: #ffffff !important;
+    }
 
-  /* Muted / Neutral Button Overrides */
-  .btn[style*="#555"],
-  .btn[style*="background:#555"],
-  .btn[style*="background: #555"] {
-    background: #475569 !important;
-    color: #ffffff !important;
-  }
-  .btn[style*="#555"]:hover,
-  .btn[style*="background:#555"]:hover {
-    background: #334155 !important;
-  }
+    .btn[style*="#a33"]:hover,
+    .btn[style*="background:#a33"]:hover {
+      background: #b91c1c !important;
+    }
 
-  /* Steps Indicator Badge */
-  .steps {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.4rem 0.9rem;
-    border-radius: 9999px;
-    background: rgba(224, 242, 254, 0.85);
-    border: 1px solid rgba(186, 230, 253, 0.9);
-    color: #0369a1;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    margin-bottom: 1.25rem;
-  }
+    /* Muted / Neutral Button Overrides */
+    .btn[style*="#555"],
+    .btn[style*="background:#555"],
+    .btn[style*="background: #555"] {
+      background: #475569 !important;
+      color: #ffffff !important;
+    }
 
-  .steps b {
-    color: #0284c7;
-    font-weight: 700;
-  }
+    .btn[style*="#555"]:hover,
+    .btn[style*="background:#555"]:hover {
+      background: #334155 !important;
+    }
 
-  /* Alert / Flash Message */
-  .flash {
-    background: #fff1f2;
-    border: 1px solid #fecdd3;
-    color: #be123c;
-    padding: 0.85rem 1.25rem;
-    border-radius: 1rem;
-    margin: 1.25rem 0;
-    font-size: 0.875rem;
-    font-weight: 500;
-    box-shadow: 0 2px 4px rgba(225, 29, 72, 0.05);
-  }
+    /* Steps Indicator Badge */
+    .steps {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 9999px;
+      background: rgba(224, 242, 254, 0.85);
+      border: 1px solid rgba(186, 230, 253, 0.9);
+      color: #0369a1;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      margin-bottom: 1.25rem;
+    }
 
-  /* Note text */
-  .note {
-    font-size: 0.875rem;
-    color: #64748b;
-    line-height: 1.6;
-    margin-top: 0.5rem;
-    margin-bottom: 0.75rem;
-  }
+    .steps b {
+      color: #0284c7;
+      font-weight: 700;
+    }
 
-  /* Modernized Tables - Matching Leaderboard / Dashboard Design */
-  table.tbl {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    border: 1px solid rgba(203, 213, 225, 0.7);
-    border-radius: 1.25rem;
-    overflow: hidden;
-    margin-top: 0.75rem;
-    margin-bottom: 1.5rem;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 4px 15px -3px rgba(15, 45, 80, 0.04), 0 2px 6px -2px rgba(15, 45, 80, 0.02);
-  }
+    /* Alert / Flash Message */
+    .flash {
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      color: #be123c;
+      padding: 0.85rem 1.25rem;
+      border-radius: 1rem;
+      margin: 1.25rem 0;
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: 0 2px 4px rgba(225, 29, 72, 0.05);
+    }
 
-  table.tbl th {
-    background: rgba(226, 232, 240, 0.75);
-    color: #475569;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.9rem 1.25rem;
-    border-bottom: 1px solid rgba(203, 213, 225, 0.8);
-    text-align: left;
-    white-space: nowrap;
-  }
+    /* Note text */
+    .note {
+      font-size: 0.875rem;
+      color: #64748b;
+      line-height: 1.6;
+      margin-top: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
 
-  table.tbl td {
-    padding: 0.95rem 1.25rem;
-    font-size: 0.875rem;
-    color: #1e293b;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.65);
-    text-align: left;
-    transition: background-color 0.15s ease;
-  }
+    /* Modernized Tables - Matching Leaderboard / Dashboard Design */
+    table.tbl {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid rgba(203, 213, 225, 0.7);
+      border-radius: 1.25rem;
+      overflow: hidden;
+      margin-top: 0.75rem;
+      margin-bottom: 1.5rem;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 15px -3px rgba(15, 45, 80, 0.04), 0 2px 6px -2px rgba(15, 45, 80, 0.02);
+    }
 
-  table.tbl tr:last-child td {
-    border-bottom: none;
-  }
+    table.tbl th {
+      background: rgba(226, 232, 240, 0.75);
+      color: #475569;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid rgba(203, 213, 225, 0.8);
+      text-align: left;
+      white-space: nowrap;
+    }
 
-  table.tbl tbody tr:hover td {
-    background: rgba(255, 255, 255, 0.9);
-  }
+    table.tbl td {
+      padding: 0.95rem 1.25rem;
+      font-size: 0.875rem;
+      color: #1e293b;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.65);
+      text-align: left;
+      transition: background-color 0.15s ease;
+    }
 
-  /* Global Link styling */
-  a {
-    color: #0b3d6e;
-    text-decoration: underline;
-    transition: color 0.15s ease;
-  }
+    table.tbl tr:last-child td {
+      border-bottom: none;
+    }
 
-  a:hover {
-    color: #072545;
-  }
+    table.tbl tbody tr:hover td {
+      background: rgba(255, 255, 255, 0.9);
+    }
 
-  /* Preformatted code snippet block */
-  pre {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.75rem;
-    padding: 1rem;
-    font-size: 0.8125rem;
-    color: #0f172a;
-    word-break: break-all;
-    white-space: pre-wrap;
-  }
-</style>
+    /* Global Link styling */
+    a {
+      color: #0b3d6e;
+      text-decoration: underline;
+      transition: color 0.15s ease;
+    }
+
+    a:hover {
+      color: #072545;
+    }
+
+    /* Preformatted code snippet block */
+    pre {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      font-size: 0.8125rem;
+      color: #0f172a;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
-<body class="text-slate-800 antialiased font-sans selection:bg-lime-300 selection:text-slate-900 flex flex-col justify-between">
 
-<!-- Top Header Wrapper -->
-<div class="pt-6 px-4 mb-8">
-  <!-- Refined floating capsule navbar -->
-  <header class="max-w-7xl mx-auto px-4 relative z-50">
-    <nav class="bg-white/85 border border-white/70 rounded-2xl px-6 py-3.5 backdrop-blur-md text-slate-800 flex items-center justify-between shadow-xl shadow-sky-950/5 transition-all duration-200">
-      <!-- Left: Emblem Logo & Titles -->
-      <a href="/" class="flex items-center gap-3.5 hover:opacity-90 transition-opacity no-underline">
-        <div class="w-11 h-11 rounded-xl bg-sky-50/90 border border-sky-200/60 flex items-center justify-center text-teal-600 shadow-sm shrink-0">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24">
-            <path d="M3 21h18"></path>
-            <path d="M3 10h18"></path>
-            <path d="M5 10v11"></path>
-            <path d="M19 10v11"></path>
-            <path d="M9 10v11"></path>
-            <path d="M12 3l9 4.5V10H3V7.5L12 3z"></path>
-            <path d="M12 14v4"></path>
-            <path d="M15 14c0 2-3 4-3 4s-3-2-3-4a3 3 0 0 1 6 0z"></path>
-          </svg>
-        </div>
-        <div class="flex flex-col text-left">
-          <div class="flex items-center gap-2.5">
-            <span class="text-xl font-serif font-bold tracking-tight text-slate-900">Sewa Setu</span>
-            <span class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-400/60 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              LIVE PORTAL
-            </span>
-          </div>
-          <span class="text-xs text-slate-500 font-normal tracking-wide mt-0.5">
-            Department of Social Welfare • Govt. of Purvanchal
-          </span>
-        </div>
-      </a>
+<body
+  class="text-slate-800 antialiased font-sans selection:bg-lime-300 selection:text-slate-900 flex flex-col justify-between">
 
-      <!-- Right: Controls & Toll-Free -->
-      <div class="flex items-center gap-3 lg:gap-5">
-        <!-- Accessibility Font Size Toggle -->
-        <div class="hidden sm:flex items-center gap-2 bg-slate-100/80 border border-slate-200/80 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700">
-          <button class="hover:text-slate-900 transition-colors cursor-pointer" title="Decrease text size" type="button" onclick="adjustFontSize(-1)">A-</button>
-          <span class="text-slate-300">|</span>
-          <button class="hover:text-slate-900 transition-colors cursor-pointer" title="Increase text size" type="button" onclick="adjustFontSize(1)">A+</button>
-        </div>
-
-        <!-- Language Switcher -->
-        <div class="hidden sm:flex items-center gap-1.5 bg-slate-100/80 border border-slate-200/80 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 cursor-pointer" title="Language selection">
-          <span class="text-slate-900 font-bold" id="lang-en">EN</span>
-          <span class="text-slate-300 font-normal">|</span>
-          <span class="text-slate-500 hover:text-slate-900 transition-colors" id="lang-hi">हिंदी</span>
-        </div>
-
-        <!-- Toll-Free Helpline Pill -->
-        <a class="bg-amber-50/90 hover:bg-amber-100/90 border border-amber-200/70 px-3.5 py-1.5 rounded-xl flex items-center gap-2.5 transition-colors text-left shadow-sm group no-underline" href="tel:1800xxxxxxx">
-          <div class="text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+  <!-- Top Header Wrapper -->
+  <div class="pt-6 px-4 mb-8">
+    <!-- Refined floating capsule navbar -->
+    <header class="max-w-7xl mx-auto px-4 relative z-50">
+      <nav
+        class="bg-white/85 border border-white/70 rounded-2xl px-6 py-3.5 backdrop-blur-md text-slate-800 flex items-center justify-between shadow-xl shadow-sky-950/5 transition-all duration-200">
+        <!-- Left: Emblem Logo & Titles -->
+        <a href="/" class="flex items-center gap-3.5 hover:opacity-90 transition-opacity no-underline">
+          <div
+            class="w-11 h-11 rounded-xl bg-sky-50/90 border border-sky-200/60 flex items-center justify-center text-teal-600 shadow-sm shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+              stroke-width="1.75" viewBox="0 0 24 24">
+              <path d="M3 21h18"></path>
+              <path d="M3 10h18"></path>
+              <path d="M5 10v11"></path>
+              <path d="M19 10v11"></path>
+              <path d="M9 10v11"></path>
+              <path d="M12 3l9 4.5V10H3V7.5L12 3z"></path>
+              <path d="M12 14v4"></path>
+              <path d="M15 14c0 2-3 4-3 4s-3-2-3-4a3 3 0 0 1 6 0z"></path>
             </svg>
           </div>
-          <div class="flex flex-col leading-tight">
-            <span class="text-[10px] text-amber-700 font-medium tracking-wide">Toll-Free</span>
-            <span class="text-xs font-bold text-amber-950 tracking-wide">1800-xxx-xxxx</span>
+          <div class="flex flex-col text-left">
+            <div class="flex items-center gap-2.5">
+              <span class="text-xl font-serif font-bold tracking-tight text-slate-900">Sewa Setu</span>
+              <span
+                class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-400/60 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                LIVE PORTAL
+              </span>
+            </div>
+            <span class="text-xs text-slate-500 font-normal tracking-wide mt-0.5">
+              Department of Social Welfare • Govt. of Purvanchal
+            </span>
           </div>
         </a>
-      </div>
-    </nav>
-  </header>
-</div>
 
-<!-- Main Content Area -->
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 mb-16 w-full">
-  <div class="container">
-    {% with messages = get_flashed_messages() %}
+        <!-- Right: Controls & Toll-Free -->
+        <div class="flex items-center gap-3 lg:gap-5">
+          <!-- Accessibility Font Size Toggle -->
+          <div
+            class="hidden sm:flex items-center gap-2 bg-slate-100/80 border border-slate-200/80 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700">
+            <button class="hover:text-slate-900 transition-colors cursor-pointer" title="Decrease text size"
+              type="button" onclick="adjustFontSize(-1)">A-</button>
+            <span class="text-slate-300">|</span>
+            <button class="hover:text-slate-900 transition-colors cursor-pointer" title="Increase text size"
+              type="button" onclick="adjustFontSize(1)">A+</button>
+          </div>
+
+          <!-- Language Switcher -->
+          <div
+            class="hidden sm:flex items-center gap-1.5 bg-slate-100/80 border border-slate-200/80 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 cursor-pointer"
+            title="Language selection">
+            <span class="text-slate-900 font-bold" id="lang-en">EN</span>
+            <span class="text-slate-300 font-normal">|</span>
+            <span class="text-slate-500 hover:text-slate-900 transition-colors" id="lang-hi">हिंदी</span>
+          </div>
+
+          <!-- Toll-Free Helpline Pill -->
+          <a class="bg-amber-50/90 hover:bg-amber-100/90 border border-amber-200/70 px-3.5 py-1.5 rounded-xl flex items-center gap-2.5 transition-colors text-left shadow-sm group no-underline"
+            href="tel:1800xxxxxxx">
+            <div class="text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="2" viewBox="0 0 24 24">
+                <path
+                  d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                </path>
+              </svg>
+            </div>
+            <div class="flex flex-col leading-tight">
+              <span class="text-[10px] text-amber-700 font-medium tracking-wide">Toll-Free</span>
+              <span class="text-xs font-bold text-amber-950 tracking-wide">1800-xxx-xxxx</span>
+            </div>
+          </a>
+        </div>
+      </nav>
+    </header>
+  </div>
+
+  <!-- Main Content Area -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 mb-16 w-full">
+    <div class="container">
+      {% with messages = get_flashed_messages() %}
       {% if messages %}
-        {% for m in messages %}
-          <div class="flash">{{ m|safe }}</div>
-        {% endfor %}
+      {% for m in messages %}
+      <div class="flash">{{ m|safe }}</div>
+      {% endfor %}
       {% endif %}
-    {% endwith %}
+      {% endwith %}
 
-    {% block content %}{% endblock %}
-  </div>
-</main>
-
-<!-- Unified Footer matching home page -->
-<footer class="py-10 mt-auto text-center text-sm">
-  <div class="max-w-7xl mx-auto px-4">
-    <div class="mb-1.5 text-sm text-slate-700">
-      <a class="text-[#0b3d6e] hover:text-[#072545] underline font-normal mx-2" href="/">Home</a>
-      <span class="text-slate-600">|</span>
-      <a class="text-[#0b3d6e] hover:text-[#072545] underline font-normal mx-2" href="/about">About the Scheme</a>
-      <span class="text-slate-600">|</span>
-      <a class="text-[#0b3d6e] hover:text-[#072545] underline font-normal mx-2" href="/status">Application Status</a>
+      {% block content %}{% endblock %}
     </div>
-    <p class="text-slate-600 text-sm font-normal m-0">
-      Department of Social Welfare, Government of Purvanchal.
-    </p>
-  </div>
-</footer>
+  </main>
 
-<!-- Interactive Accessibility Font Sizing -->
-<script>
-  let currentZoom = 100;
-  function adjustFontSize(delta) {
-    currentZoom = Math.min(Math.max(currentZoom + (delta * 10), 80), 130);
-    document.documentElement.style.fontSize = currentZoom + '%';
-  }
-</script>
+  <!-- Unified Footer matching home page -->
+  <footer class="py-10 mt-auto text-center text-sm">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="mb-1.5 text-sm text-slate-700">
+        <a class="text-[#0b3d6e] hover:text-[#072545] underline font-normal mx-2" href="/">Home</a>
+        <span class="text-slate-600">|</span>
+        <a class="text-[#0b3d6e] hover:text-[#072545] underline font-normal mx-2" href="/about">About the Scheme</a>
+        <span class="text-slate-600">|</span>
+        <a class="text-[#0b3d6e] hover:text-[#072545] underline font-normal mx-2" href="/status">Application Status</a>
+      </div>
+      <p class="text-slate-600 text-sm font-normal m-0">
+        Department of Social Welfare, Government of Purvanchal.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Interactive Accessibility Font Sizing -->
+  <script>
+    let currentZoom = 100;
+    function adjustFontSize(delta) {
+      currentZoom = Math.min(Math.max(currentZoom + (delta * 10), 80), 130);
+      document.documentElement.style.fontSize = currentZoom + '%';
+    }
+  </script>
 
 </body>
+
 </html>

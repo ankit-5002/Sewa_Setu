@@ -1,0 +1,25 @@
+# Environment and secrets
+.env
+*.env
+*.env.local
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Logs and runtime artifacts
+*.log
+/var/log/
+cookies*.txt
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Deployment guides & local docs
+RENDER_DEPLOYMENT.md
+*_DEPLOYMENT.md
+

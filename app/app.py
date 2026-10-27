@@ -26,7 +26,7 @@ def now_ist():
 import requests
 import psycopg2
 from flask import (Flask, request, session, redirect, url_for, render_template,
-                   flash, send_file, abort)
+                   flash, send_file, abort, jsonify)
 from fpdf import FPDF
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -46,9 +46,15 @@ ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 # WITHDRAWN and REJECTED applications do not block a fresh application.
 ACTIVE_STATUSES = ("PENDING", "APPROVED", "DEEMED_APPROVED")
 
-SMS_GATEWAY_URL = config.get("app", "sms_gateway_url")
+SMS_GATEWAY_URL = os.environ.get("SMS_GATEWAY_URL") or config.get("app", "sms_gateway_url")
 OTP_VALIDITY_SECONDS = config.getint("app", "otp_validity_seconds")
-UPLOAD_DIR = config.get("app", "upload_dir")
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR") or config.get("app", "upload_dir")
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+except Exception:
+    UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
 SCHEME_DEADLINE = datetime.strptime(config.get("pension", "scheme_deadline"),
                                     "%Y-%m-%d %H:%M")
 MIN_AGE = config.getint("pension", "min_age")
@@ -69,13 +75,41 @@ except Exception:
 
 
 def get_db():
+    db_url = os.environ.get("DATABASE_URL")
+    if db_url:
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
+        return psycopg2.connect(db_url)
     return psycopg2.connect(
-        host=config.get("database", "host"),
-        port=config.get("database", "port"),
-        dbname=config.get("database", "name"),
-        user=config.get("database", "user"),
-        password=config.get("database", "password"),
+        host=os.environ.get("DB_HOST", config.get("database", "host")),
+        port=os.environ.get("DB_PORT", config.get("database", "port")),
+        dbname=os.environ.get("DB_NAME", config.get("database", "name")),
+        user=os.environ.get("DB_USER", config.get("database", "user")),
+        password=os.environ.get("DB_PASSWORD", config.get("database", "password")),
     )
+
+
+def init_db_if_needed():
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT to_regclass('applications');")
+        res = cur.fetchone()
+        if not res or not res[0]:
+            app.logger.info("Initializing database schema from schema.sql...")
+            schema_path = os.path.join(BASE_DIR, "schema.sql")
+            if os.path.exists(schema_path):
+                with open(schema_path, "r", encoding="utf-8") as f:
+                    cur.execute(f.read())
+                conn.commit()
+                app.logger.info("Database schema initialized successfully.")
+        cur.close()
+        conn.close()
+    except Exception as e:
+        app.logger.warning("Database schema check notice: %s" % e)
+
+
+init_db_if_needed()
 
 
 def sanitize(value, maxlen=100):
@@ -90,12 +124,20 @@ def hash_password(p):
     return hashlib.sha256(p.encode("utf-8")).hexdigest()
 
 
+_FALLBACK_SMS = []
+
+
 def send_sms(mobile, text):
+    _FALLBACK_SMS.append({
+        "to": mobile,
+        "body": text,
+        "sent_at": datetime.now().strftime("%H:%M:%S")
+    })
     try:
         requests.post(SMS_GATEWAY_URL + "/api/send",
-                      json={"to": mobile, "text": text}, timeout=5)
+                      json={"to": mobile, "text": text}, timeout=3)
     except Exception as e:
-        app.logger.error("sms gateway error: %s" % e)
+        app.logger.info("External SMS gateway skipped or unavailable: %s" % e)
 
 
 def deadline_remaining():
@@ -231,16 +273,30 @@ def about():
 @app.route("/__gateway/", defaults={"subpath": ""})
 @app.route("/__gateway/<path:subpath>")
 def gateway_proxy(subpath):
-    # Convenience proxy to the internal SMS gateway, so the OTP inbox is reachable
-    # on the main site without opening a second port on the host. The gateway
-    # itself runs only on the internal network.
+    # Convenience proxy to the internal SMS gateway, with fallback to in-memory store
     try:
         r = requests.get(SMS_GATEWAY_URL + "/" + subpath,
-                         params=request.args, timeout=5)
+                         params=request.args, timeout=2)
         return (r.content, r.status_code,
                 {"Content-Type": r.headers.get("Content-Type", "text/html")})
-    except Exception as e:
-        return ("SMS gateway unreachable: %s" % e, 502)
+    except Exception:
+        if subpath == "messages":
+            mobile = request.args.get("mobile")
+            res = _FALLBACK_SMS
+            if mobile:
+                res = [m for m in res if m.get("to") == mobile]
+            return jsonify(res)
+        rows_html = "".join([
+            f"<tr><td>{i+1}</td><td>{m.get('to')}</td><td>{m.get('body')}</td><td>{m.get('sent_at')}</td><td><span style='color:green;font-weight:bold'>Delivered</span></td></tr>"
+            for i, m in enumerate(reversed(_FALLBACK_SMS))
+        ])
+        html = f"""<!doctype html><html><head><title>Sewa Setu - SMS Gateway Console</title>
+        <meta http-equiv="refresh" content="5">
+        <style>body{{font-family:system-ui,-apple-system,sans-serif;margin:24px;background:#f8fafc;color:#1e293b}}table{{border-collapse:collapse;width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)}}th,td{{border:1px solid #e2e8f0;padding:10px 14px;text-align:left;font-size:14px}}th{{background:#f1f5f9;font-weight:600}}</style>
+        </head><body><h2 style="color:#0f172a">PurvSMS Gateway Inbox (Simulation)</h2>
+        <p style="color:#64748b">Simulated SMS inbox for cloud deployment. Auto-refreshes every 5s.</p>
+        <table><tr><th>#</th><th>To</th><th>Message</th><th>Sent At</th><th>Status</th></tr>{rows_html if rows_html else '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:24px">No SMS sent yet</td></tr>'}</table></body></html>"""
+        return (html, 200, {"Content-Type": "text/html"})
 
 
 # ---------------------------------------------------------------------------
