@@ -33,14 +33,54 @@
 </div>
 {% endif %}
 
-<form method="post" enctype="multipart/form-data" class="space-y-4 max-w-lg">
+<form method="post" enctype="multipart/form-data" class="space-y-4 max-w-lg" id="upload-form">
   <div>
     <label>Select Document {% if doc_name %}(Optional if keeping current file){% else %}*{% endif %}</label>
-    <input type="file" name="document" accept=".jpg,.jpeg,.png,.pdf" class="{% if 'document' in (error_fields or []) %}field-error{% endif %} file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer" {% if not doc_name %}required{% endif %}>
+    <input type="file" name="document" id="document-input" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" class="{% if 'document' in (error_fields or []) %}field-error{% endif %} file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer w-full text-sm text-slate-600" {% if not doc_name %}required{% endif %}>
+    <div id="file-validation-msg" class="text-xs text-rose-600 font-semibold mt-1.5 hidden"></div>
   </div>
   <div class="flex items-center gap-3 pt-4">
     <button type="submit" name="action" value="back" formnovalidate class="btn-secondary">Back</button>
     <button class="btn" type="submit" name="action" value="next">{% if doc_name %}Continue with Document{% else %}Upload &amp; Continue{% endif %}</button>
   </div>
 </form>
+
+<script>
+  const fileInput = document.getElementById('document-input');
+  const errorMsg = document.getElementById('file-validation-msg');
+
+  if (fileInput) {
+    fileInput.addEventListener('change', function() {
+      errorMsg.classList.add('hidden');
+      errorMsg.textContent = '';
+      if (!this.files || !this.files[0]) return;
+      const file = this.files[0];
+      const validExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+      const ext = file.name.split('.').pop().toLowerCase();
+
+      if (!validExtensions.includes(ext)) {
+        errorMsg.textContent = 'Invalid file format. Only JPG, PNG, or PDF files are allowed.';
+        errorMsg.classList.remove('hidden');
+        this.value = '';
+        return;
+      }
+
+      const maxBytes = 5 * 1024 * 1024; // 5 MB
+      if (file.size > maxBytes) {
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+        errorMsg.textContent = 'File is too large (' + sizeMb + ' MB). Maximum allowed size is 5 MB.';
+        errorMsg.classList.remove('hidden');
+        this.value = '';
+        return;
+      }
+
+      if (file.size === 0) {
+        errorMsg.textContent = 'The selected file is empty. Please choose a valid file.';
+        errorMsg.classList.remove('hidden');
+        this.value = '';
+        return;
+      }
+    });
+  }
+</script>
 {% endblock %}

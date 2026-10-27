@@ -38,8 +38,12 @@ td,th{border:1px solid #ccc;padding:6px 10px;font-size:14px;text-align:left}
 <tr><td>{{m.id}}</td><td>{{m.to}}</td>
 <td>{% if m.delivered %}{{m.text}}{% else %}<i>(in transit)</i>{% endif %}</td>
 <td>{{m.sent_hhmm}}</td>
-<td>{% if m.delivered %}<span class="d">Delivered</span>
-{% else %}<span class="q">Queued &middot; ~{{m.eta}}s</span>{% endif %}</td></tr>
+<td>{% if m.delivered %}<span class="d">Delivered</span>{% else %}<span class="q">Queued &middot; ~{{m.eta}}s</span>{% endif %}</td></tr>
+{% else %}
+<tr><td colspan="5" style="text-align:center;padding:32px 10px;color:#64748b;">
+  <div style="font-weight:700;font-size:15px;color:#0f172a;margin-bottom:4px;">No messages found</div>
+  <div style="font-size:12px;">No carrier SMS messages have been sent yet.</div>
+</td></tr>
 {% endfor %}
 </table></body></html>
 """

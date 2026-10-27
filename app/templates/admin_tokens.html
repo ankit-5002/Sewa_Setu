@@ -4,6 +4,12 @@
   <h2 class="font-purvsms m-0">Program Tokens</h2>
   <div class="flex items-center gap-3">
     <a href="/admin/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-sky-50 text-sky-900 border border-sky-300 hover:bg-sky-100 no-underline transition-colors shadow-xs">&laquo; Dashboard</a>
+    <a href="/admin/logout" style="background: #dc2626 !important; color: #ffffff !important; border-color: #dc2626 !important;" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white border border-red-600 transition-colors shadow-xs no-underline cursor-pointer">
+      <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+      </svg>
+      Log Out
+    </a>
   </div>
 </div>
 
@@ -61,6 +67,20 @@
           <td class="text-xs text-slate-500">{{ c | format_ist }}</td>
           <td class="text-xs text-slate-500">{{ e | format_ist }}</td>
         </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center py-10 px-4">
+            <div class="flex flex-col items-center justify-center max-w-xs mx-auto text-center">
+              <div class="w-12 h-12 rounded-full bg-white border border-slate-200/90 flex items-center justify-center shadow-xs mb-3 text-slate-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+              <h4 class="text-sm font-bold text-slate-900 mb-1">No program tokens found</h4>
+              <p class="text-xs text-slate-500 mb-0">No long-lived unattended program tokens have been issued yet.</p>
+            </div>
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
@@ -69,7 +89,6 @@
 
 <div class="my-8">
   <h3 class="font-purvsms">Your Current Officer Sign-Ins (through applications)</h3>
-  {% if grants %}
   <div class="overflow-x-auto">
     <table class="tbl" style="max-width:720px">
       <thead>
@@ -94,13 +113,24 @@
             </form>
           </td>
         </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="text-center py-10 px-4">
+            <div class="flex flex-col items-center justify-center max-w-xs mx-auto text-center">
+              <div class="w-12 h-12 rounded-full bg-white border border-slate-200/90 flex items-center justify-center shadow-xs mb-3 text-slate-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+              <h4 class="text-sm font-bold text-slate-900 mb-1">No active officer sign-ins</h4>
+              <p class="text-xs text-slate-500 mb-0">You currently have no active sessions through third-party applications.</p>
+            </div>
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-  {% else %}
-  <p class="note">None.</p>
-  {% endif %}
 </div>
 
 <div class="my-8">
@@ -120,6 +150,20 @@
           <td class="font-semibold text-slate-900">{{ n }}</td>
           <td><span class="inline-flex px-2 py-0.5 rounded text-xs font-mono bg-slate-100 text-slate-700">{{ k }}</span></td>
           <td class="text-xs text-slate-500">{{ c | format_ist }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="3" class="text-center py-10 px-4">
+            <div class="flex flex-col items-center justify-center max-w-xs mx-auto text-center">
+              <div class="w-12 h-12 rounded-full bg-white border border-slate-200/90 flex items-center justify-center shadow-xs mb-3 text-slate-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+              <h4 class="text-sm font-bold text-slate-900 mb-1">No registered applications</h4>
+              <p class="text-xs text-slate-500 mb-0">No external client applications have registered for OAuth access yet.</p>
+            </div>
+          </td>
         </tr>
         {% endfor %}
       </tbody>

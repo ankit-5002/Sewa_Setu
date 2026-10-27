@@ -2,69 +2,158 @@
 {% block content %}
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
   <h2 class="font-purvsms m-0">Application {{ a[0] }}</h2>
-  <div class="flex items-center gap-3">
+  <div class="flex flex-wrap items-center gap-3">
     <a href="/admin/applications" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-sky-50 text-sky-900 border border-sky-300 hover:bg-sky-100 no-underline transition-colors shadow-xs">Back to list</a>
     <a href="/admin/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-sky-50 text-sky-900 border border-sky-300 hover:bg-sky-100 no-underline transition-colors shadow-xs">Dashboard</a>
+    <a href="/admin/tokens" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-sky-50 text-sky-900 border border-sky-300 hover:bg-sky-100 no-underline transition-colors shadow-xs">
+      <svg class="w-4 h-4 text-sky-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+      </svg>
+      Program tokens
+    </a>
+    <a href="/admin/logout" style="background: #dc2626 !important; color: #ffffff !important; border-color: #dc2626 !important;" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white border border-red-600 transition-colors shadow-xs no-underline cursor-pointer">
+      <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+      </svg>
+      Log Out
+    </a>
   </div>
 </div>
 
-<div class="my-6">
-  <table class="tbl" style="max-width:720px">
-    <tr><th style="width: 200px;">Applicant Name</th><td class="font-semibold text-slate-900">{{ a[1] }}</td></tr>
-    <tr><th>Mobile</th><td class="font-mono">{{ a[2] }}</td></tr>
-    <tr><th>Date of Birth</th><td>{{ a[3] }}</td></tr>
-    <tr><th>Gender</th><td>{{ a[4] }}</td></tr>
-    <tr><th>Marital Status</th><td>{{ a[5] }}</td></tr>
-    <tr><th>Village</th><td>{{ a[6] }}</td></tr>
-    <tr><th>Block</th><td>{{ a[7] }}</td></tr>
-    <tr><th>Bank Account</th><td class="font-mono">{{ a[8] }}</td></tr>
-    <tr><th>IFSC</th><td class="font-mono">{{ a[9] }}</td></tr>
-    <tr><th>Document</th><td>{{ a[10] or '-' }}</td></tr>
-    <tr>
-      <th>Status</th>
-      <td>
-        {% if a[11] == 'APPROVED' %}
-          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">APPROVED</span>
-        {% elif a[11] == 'REJECTED' %}
-          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800">REJECTED</span>
-        {% elif a[11] == 'DEEMED_APPROVED' %}
-          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">DEEMED APPROVED</span>
-        {% elif a[11] == 'WITHDRAWN' %}
-          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">WITHDRAWN</span>
-        {% else %}
-          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">{{ a[11] }}</span>
-        {% endif %}
-      </td>
-    </tr>
-    <tr><th>Submitted</th><td class="text-xs text-slate-600">{{ a[12] | format_ist }}</td></tr>
-    <tr><th>Decided</th><td class="text-xs text-slate-600">{% if a[13] %}{{ a[13] | format_ist }}{% else %}-{% endif %} {% if a[14] %}by <b>{{ a[14] }}</b>{% endif %}</td></tr>
-  </table>
-</div>
-
-{% if a[11] == 'PENDING' %}
-<div class="my-8 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs max-w-[720px]">
-  <h3 class="font-purvsms mt-0 mb-4">Official Decision</h3>
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <!-- Approve Form -->
-    <form method="post" action="/admin/approve/{{ app_id }}" class="flex flex-col gap-2 p-4 rounded-xl bg-white border border-emerald-200">
-      <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Approve Application</span>
-      <input type="text" name="note" placeholder="Note (optional)" class="text-sm">
-      <button class="btn" style="background:#059669; padding: 0.6rem 1rem;" type="submit">Approve</button>
-    </form>
-
-    <!-- Reject Form -->
-    <form method="post" action="/admin/reject/{{ app_id }}" class="flex flex-col gap-2 p-4 rounded-xl bg-white border border-rose-200">
-      <span class="text-xs font-bold uppercase tracking-wider text-rose-700">Reject Application</span>
-      <input type="text" name="note" placeholder="Reason for rejection" class="text-sm" required>
-      <button class="btn" style="background:#dc2626; padding: 0.6rem 1rem;" type="submit">Reject</button>
-    </form>
+<!-- Main Details Grid: Data Table on the left, Uploaded Document Preview & Official Decision on the right -->
+<div class="grid grid-cols-1 {% if has_document %}lg:grid-cols-2{% else %}max-w-3xl{% endif %} gap-6 my-6 items-stretch">
+  <!-- Left Column: User Data Table -->
+  <div class="w-full flex flex-col h-full">
+    <table class="tbl w-full h-full m-0" style="margin: 0; height: 100%;">
+      <tr><th style="width: 170px;">Applicant Name</th><td class="font-semibold text-slate-900">{{ a[1] }}</td></tr>
+      <tr><th>Mobile</th><td class="font-mono">{{ a[2] }}</td></tr>
+      <tr><th>Date of Birth</th><td>{{ a[3] }}</td></tr>
+      <tr><th>Gender</th><td>{{ a[4] }}</td></tr>
+      <tr><th>Marital Status</th><td>{{ a[5] }}</td></tr>
+      <tr><th>Village</th><td>{{ a[6] }}</td></tr>
+      <tr><th>Block</th><td>{{ a[7] }}</td></tr>
+      <tr><th>Bank Account</th><td class="font-mono">{{ a[8] }}</td></tr>
+      <tr><th>IFSC</th><td class="font-mono">{{ a[9] }}</td></tr>
+      <tr>
+        <th>Age Proof Document</th>
+        <td>
+          {% if has_document %}
+            <div class="flex items-center justify-between gap-3">
+              <span class="font-mono text-xs font-semibold text-slate-800 break-all">{{ doc_name }}</span>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <a href="/admin/application/{{ app_id }}/document" target="_blank" title="View Document" aria-label="View Document" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-sky-100 text-sky-800 hover:bg-sky-200 transition-colors no-underline shadow-xs">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </a>
+                <a href="/admin/application/{{ app_id }}/document?download=1" title="Download Document" aria-label="Download Document" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors no-underline shadow-xs">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                </a>
+              </div>
+            </div>
+          {% else %}
+            <span class="text-slate-400 text-xs italic">No document attached (legacy record predates file upload)</span>
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>Status</th>
+        <td>
+          {% if a[11] == 'APPROVED' %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">APPROVED</span>
+          {% elif a[11] == 'REJECTED' %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800">REJECTED</span>
+          {% elif a[11] == 'DEEMED_APPROVED' %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">DEEMED APPROVED</span>
+          {% elif a[11] == 'WITHDRAWN' %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">WITHDRAWN</span>
+          {% else %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">{{ a[11] }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      <tr><th>Submitted</th><td class="text-xs text-slate-600">{{ a[12] | format_ist }}</td></tr>
+      <tr><th>Decided</th><td class="text-xs text-slate-600">{% if a[13] %}{{ a[13] | format_ist }}{% else %}-{% endif %} {% if a[14] %}by <b>{{ a[14] }}</b>{% endif %}</td></tr>
+    </table>
   </div>
+
+  <!-- Right Column: Uploaded Document + Official Decision (Beside Table, Matched Top & Bottom) -->
+  {% if has_document %}
+  <div class="w-full flex flex-col gap-4 h-full">
+    <!-- Uploaded Document Card -->
+    <div class="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex-1 flex flex-col min-h-0">
+      <div class="flex items-center justify-between gap-3 mb-3 pb-2.5 border-b border-slate-100 shrink-0">
+        <h3 class="font-purvsms m-0 text-lg">Uploaded Age Proof Document</h3>
+        <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono font-medium">{{ doc_mime }}</span>
+      </div>
+
+      {% if is_image %}
+        <div class="bg-slate-50/80 rounded-xl p-3 border border-slate-200/70 flex-1 min-h-[220px] flex items-center justify-center overflow-hidden">
+          <img src="/admin/application/{{ app_id }}/document" alt="Applicant Age Proof Document" class="max-h-full max-w-full rounded-lg shadow-sm object-contain cursor-zoom-in" onclick="window.open(this.src, '_blank')">
+        </div>
+      {% elif is_pdf %}
+        <div class="rounded-xl overflow-hidden border border-slate-200/90 bg-slate-50 flex-1 min-h-[260px]">
+          <iframe src="/admin/application/{{ app_id }}/document" class="w-full h-full min-h-[260px] rounded-xl border-none" title="PDF Document Viewer"></iframe>
+        </div>
+      {% else %}
+        <div class="p-5 bg-slate-50 rounded-xl border border-slate-200 text-center flex-1 flex flex-col items-center justify-center">
+          <p class="text-sm text-slate-700 mb-2">Attached Document: <b>{{ doc_name }}</b></p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Official Decision Card: Directly down the image/pdf -->
+    {% if a[11] == 'PENDING' %}
+    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs shrink-0">
+      <h3 class="font-purvsms mt-0 mb-3">Official Decision</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Approve Form -->
+        <form method="post" action="/admin/approve/{{ app_id }}" class="flex flex-col gap-2 p-3 rounded-xl bg-white border border-emerald-200">
+          <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Approve Application</span>
+          <input type="text" name="note" placeholder="Note (optional)" class="text-xs py-1.5 px-2.5 w-full">
+          <button class="btn" style="background:#059669; padding: 0.5rem 0.8rem; font-size: 0.875rem;" type="submit">Approve</button>
+        </form>
+
+        <!-- Reject Form -->
+        <form method="post" action="/admin/reject/{{ app_id }}" class="flex flex-col gap-2 p-3 rounded-xl bg-white border border-rose-200">
+          <span class="text-xs font-bold uppercase tracking-wider text-rose-700">Reject Application</span>
+          <input type="text" name="note" placeholder="Reason for rejection" class="text-xs py-1.5 px-2.5 w-full" required>
+          <button class="btn" style="background:#dc2626; padding: 0.5rem 0.8rem; font-size: 0.875rem;" type="submit">Reject</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs shrink-0">
+      <h3 class="font-purvsms mt-0 mb-1.5">Official Decision</h3>
+      <p class="text-xs text-slate-600 m-0">
+        Status: <b class="text-slate-900">{{ a[11] }}</b>
+        {% if a[13] %} &bull; Decided on {{ a[13] | format_ist }}{% endif %}
+        {% if a[14] %} by <b>{{ a[14] }}</b>{% endif %}
+      </p>
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+    {% if a[11] == 'PENDING' %}
+    <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs max-w-xl">
+      <h3 class="font-purvsms mt-0 mb-3">Official Decision</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <form method="post" action="/admin/approve/{{ app_id }}" class="flex flex-col gap-2 p-3.5 rounded-xl bg-white border border-emerald-200">
+          <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Approve Application</span>
+          <input type="text" name="note" placeholder="Note (optional)" class="text-xs py-1.5 px-2.5">
+          <button class="btn" style="background:#059669; padding: 0.5rem 0.8rem; font-size: 0.875rem;" type="submit">Approve</button>
+        </form>
+        <form method="post" action="/admin/reject/{{ app_id }}" class="flex flex-col gap-2 p-3.5 rounded-xl bg-white border border-rose-200">
+          <span class="text-xs font-bold uppercase tracking-wider text-rose-700">Reject Application</span>
+          <input type="text" name="note" placeholder="Reason for rejection" class="text-xs py-1.5 px-2.5" required>
+          <button class="btn" style="background:#dc2626; padding: 0.5rem 0.8rem; font-size: 0.875rem;" type="submit">Reject</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  {% endif %}
 </div>
-{% endif %}
 
 <div class="mt-8">
   <h3 class="font-purvsms">Audit Trail</h3>
-  {% if audit %}
   <table class="tbl" style="max-width:720px">
     <thead>
       <tr>
@@ -82,11 +171,22 @@
         <td class="text-xs text-slate-600">{{ actor }}</td>
         <td class="text-sm text-slate-700">{{ note or '-' }}</td>
       </tr>
+      {% else %}
+      <tr>
+        <td colspan="4" class="text-center py-10 px-4">
+          <div class="flex flex-col items-center justify-center max-w-xs mx-auto text-center">
+            <div class="w-12 h-12 rounded-full bg-white border border-slate-200/90 flex items-center justify-center shadow-xs mb-3 text-slate-400">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+            <h4 class="text-sm font-bold text-slate-900 mb-1">No audit entries found</h4>
+            <p class="text-xs text-slate-500 mb-0">This application predates audit logging or has no recorded events.</p>
+          </div>
+        </td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
-  {% else %}
-  <p class="note">No audit entries (application predates audit logging).</p>
-  {% endif %}
 </div>
 {% endblock %}

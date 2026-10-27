@@ -18,6 +18,7 @@ import io
 import re
 import random
 import hashlib
+import urllib.parse
 import configparser
 from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
@@ -172,6 +173,28 @@ def init_db_if_needed():
                     cur.execute(f.read())
                 conn.commit()
                 app.logger.info("Database schema initialized successfully.")
+        else:
+            # Ensure doc columns exist for database-backed file storage
+            cur.execute("ALTER TABLE applications ADD COLUMN IF NOT EXISTS doc_data BYTEA;")
+            cur.execute("ALTER TABLE applications ADD COLUMN IF NOT EXISTS doc_mime VARCHAR(100);")
+            cur.execute("ALTER TABLE applications ADD COLUMN IF NOT EXISTS doc_name VARCHAR(200);")
+            conn.commit()
+
+            # Backfill any files present on disk into the database
+            cur.execute("SELECT id, doc_path FROM applications WHERE doc_data IS NULL AND doc_path IS NOT NULL AND doc_path != '';")
+            for app_rec_id, dpath in cur.fetchall():
+                if dpath and os.path.exists(dpath):
+                    try:
+                        with open(dpath, "rb") as f:
+                            data = f.read()
+                        dname = os.path.basename(dpath)
+                        ext = dname.rsplit(".", 1)[-1].lower() if "." in dname else ""
+                        dmime = "application/pdf" if ext == "pdf" else ("image/png" if ext == "png" else "image/jpeg")
+                        cur.execute("UPDATE applications SET doc_data = %s, doc_mime = %s, doc_name = %s WHERE id = %s",
+                                    (psycopg2.Binary(data), dmime, dname, app_rec_id))
+                    except Exception:
+                        pass
+            conn.commit()
         cur.close()
         conn.close()
     except Exception as e:
@@ -398,17 +421,39 @@ def create_application(cur, mobile, cleaned):
     The caller commits. Returns (id, application_no).
     """
     app_no = new_application_no()
+    doc_path = cleaned.get("doc_path", "")
+    doc_data = None
+    doc_mime = None
+    doc_name = None
+    if doc_path and os.path.exists(doc_path):
+        try:
+            with open(doc_path, "rb") as df:
+                doc_data = df.read()
+            doc_name = os.path.basename(doc_path)
+            ext = doc_name.rsplit(".", 1)[-1].lower() if "." in doc_name else ""
+            if ext == "pdf" or (doc_data and b"%PDF-" in doc_data[:1024]):
+                doc_mime = "application/pdf"
+            elif ext == "png" or (doc_data and doc_data.startswith(b"\x89PNG")):
+                doc_mime = "image/png"
+            elif ext in ("jpg", "jpeg") or (doc_data and doc_data.startswith(b"\xff\xd8")):
+                doc_mime = "image/jpeg"
+            else:
+                doc_mime = "application/octet-stream"
+        except Exception as e:
+            app.logger.warning("Could not read doc file for DB storage: %s" % e)
+
     cur.execute(
         """INSERT INTO applications
            (application_no, applicant_name, mobile, dob, gender, marital_status,
             husband_name, husband_employer, village, block, bank_account, ifsc,
-            doc_path, status, submitted_at)
-           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'PENDING',%s)
+            doc_path, doc_data, doc_mime, doc_name, status, submitted_at)
+           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'PENDING',%s)
            RETURNING id""",
         (app_no, cleaned["applicant_name"], mobile, cleaned["dob"], cleaned["gender"],
          cleaned["marital_status"], cleaned["husband_name"], cleaned["husband_employer"],
          cleaned["village"], cleaned["block"], cleaned["bank_account"], cleaned["ifsc"],
-         cleaned["doc_path"], now_ist()))
+         cleaned["doc_path"], psycopg2.Binary(doc_data) if doc_data else None,
+         doc_mime, doc_name, now_ist()))
     new_id = cur.fetchone()[0]
 
     # status portal account; password is DOB as DDMMYYYY per dept. circular
@@ -550,7 +595,17 @@ def gateway_proxy(subpath):
             <td>{status_badge}</td>
         </tr>""")
 
-    rows_html = "".join(rows) if rows else '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:32px">No SMS messages sent yet. Submit an application form to trigger an OTP!</td></tr>'
+    rows_html = "".join(rows) if rows else '''<tr>
+        <td colspan="5" style="text-align:center;padding:48px 16px;">
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;max-width:320px;margin:0 auto;text-align:center;">
+                <div style="width:48px;height:48px;border-radius:50%;background:#ffffff;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#94a3b8;box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+                    <svg style="width:24px;height:24px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <h4 style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:4px;">No dispatches found</h4>
+                <p style="font-size:13px;color:#64748b;margin:0;">No SMS messages or OTPs have been dispatched yet.</p>
+            </div>
+        </td>
+    </tr>'''
 
     html = f"""<!doctype html>
 <html lang="en">
@@ -815,23 +870,57 @@ def upload():
             doc_path = session.get("doc_path", "")
             doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
             return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
-        filename = f.filename.lower()
+        orig_filename = f.filename
         content = f.read()
-        if not filename.rsplit(".", 1)[-1] in ("pdf", "jpg", "jpeg", "png"):
-            flash("Please upload a JPG, PNG or PDF file.")
+
+        # 1. Size validation: must be less than 5 MB and not empty
+        MAX_DOC_SIZE = 5 * 1024 * 1024  # 5 MB
+        if len(content) == 0:
+            flash("The uploaded file is empty. Please choose a valid file.")
             doc_path = session.get("doc_path", "")
             doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
             return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
-        if len(content) > 5 * 1024 * 1024:
-            flash("File is larger than 5 MB. Please upload a smaller file.")
+
+        if len(content) > MAX_DOC_SIZE:
+            flash("File size exceeds 5 MB. Please upload a file smaller than 5 MB.")
             doc_path = session.get("doc_path", "")
             doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
             return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
+
+        # 2. Extension validation: must be PDF, JPG, JPEG, or PNG
+        ext = orig_filename.rsplit(".", 1)[-1].lower() if "." in orig_filename else ""
+        if ext not in ("pdf", "jpg", "jpeg", "png"):
+            flash("Invalid file format. Only JPG, PNG, or PDF files are allowed.")
+            doc_path = session.get("doc_path", "")
+            doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
+            return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
+
+        # 3. Magic bytes / header validation to ensure genuine image or PDF
+        is_pdf = (ext == "pdf") and (b"%PDF-" in content[:1024])
+        is_jpeg = (ext in ("jpg", "jpeg")) and content.startswith(b"\xff\xd8")
+        is_png = (ext == "png") and content.startswith(b"\x89PNG\r\n\x1a\n")
+
+        if not (is_pdf or is_jpeg or is_png):
+            flash("Invalid file content. The file does not appear to be a valid image (JPG, PNG) or PDF document.")
+            doc_path = session.get("doc_path", "")
+            doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
+            return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
+
+        if is_pdf:
+            mime_type = "application/pdf"
+        elif is_png:
+            mime_type = "image/png"
+        else:
+            mime_type = "image/jpeg"
+
+        clean_filename = re.sub(r"[^a-zA-Z0-9_.-]", "_", os.path.basename(orig_filename))
         os.makedirs(UPLOAD_DIR, exist_ok=True)
-        path = os.path.join(UPLOAD_DIR, "%s_%s" % (session["verified_mobile"], filename))
+        path = os.path.join(UPLOAD_DIR, "%s_%s" % (session["verified_mobile"], clean_filename))
         with open(path, "wb") as out:
             out.write(content)
         session["doc_path"] = path
+        session["doc_name"] = clean_filename
+        session["doc_mime"] = mime_type
         return redirect(url_for("declaration"))
     doc_path = session.get("doc_path", "")
     doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
@@ -902,6 +991,8 @@ def handle_submission():
 
     session.pop("form_data", None)
     session.pop("doc_path", None)
+    session.pop("doc_name", None)
+    session.pop("doc_mime", None)
     session.pop("verified_mobile", None)
     # The applicant just proved ownership of this mobile by OTP, so let them
     # see their application and download the acknowledgment without a second login.
@@ -1134,44 +1225,60 @@ def admin_dashboard():
 def admin_list():
     if not session.get("admin"):
         return redirect(url_for("admin_login"))
-    status = request.args.get("status", "PENDING")
-    mobile = request.args.get("mobile", "").strip()
+
+    q = (request.args.get("q") or request.args.get("mobile") or "").strip()
+    status = request.args.get("status", "" if q else "PENDING").strip().upper()
+    block = request.args.get("block", "").strip()
+    gender = request.args.get("gender", "").strip()
+
     try:
-        page = int(request.args.get("page", 1))
-        if page < 1:
-            page = 1
+        page = max(1, int(request.args.get("page", 1)))
     except (ValueError, TypeError):
         page = 1
     per_page = 50
     offset = (page - 1) * per_page
+
     conn = get_db()
     cur = conn.cursor()
-    if mobile:
-        cur.execute("SELECT count(*) FROM applications WHERE mobile = %s", (mobile,))
-        total_count = cur.fetchone()[0]
-        cur.execute("SELECT id, application_no, applicant_name, mobile, block, status, "
-                    "submitted_at FROM applications WHERE mobile = %s "
-                    "ORDER BY submitted_at DESC, id DESC LIMIT %s OFFSET %s",
-                    (mobile, per_page, offset))
-        display_status = f"Mobile: {mobile}"
-    else:
-        cur.execute("SELECT count(*) FROM applications WHERE status = %s", (status,))
-        total_count = cur.fetchone()[0]
-        cur.execute("SELECT id, application_no, applicant_name, mobile, block, status, "
-                    "submitted_at FROM applications WHERE status = %s "
-                    "ORDER BY submitted_at DESC, id DESC LIMIT %s OFFSET %s",
-                    (status, per_page, offset))
-        display_status = status
+    cur.execute("SELECT DISTINCT block FROM applications WHERE block IS NOT NULL AND block != '' ORDER BY block")
+    blocks = [r[0] for r in cur.fetchall()]
+
+    where, params = [], []
+    if q:
+        p = f"%{q}%"
+        where.append("(application_no ILIKE %s OR applicant_name ILIKE %s OR mobile ILIKE %s)")
+        params.extend([p, p, p])
+    if status and status != "ALL":
+        where.append("status = %s")
+        params.append(status)
+    if block and block != "ALL":
+        where.append("block = %s")
+        params.append(block)
+    if gender and gender != "ALL":
+        where.append("gender ILIKE %s")
+        params.append(gender)
+
+    sql_where = ("WHERE " + " AND ".join(where)) if where else ""
+    cur.execute(f"SELECT count(*) FROM applications {sql_where}", tuple(params))
+    total_count = cur.fetchone()[0]
+
+    cur.execute(f"SELECT id, application_no, applicant_name, mobile, block, status, submitted_at "
+                f"FROM applications {sql_where} ORDER BY submitted_at DESC, id DESC LIMIT %s OFFSET %s",
+                tuple(params + [per_page, offset]))
     rows = cur.fetchall()
     cur.close(); conn.close()
-    total_pages = (total_count + per_page - 1) // per_page if total_count > 0 else 1
-    if page > total_pages and total_pages > 0:
-        page = total_pages
 
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+    page = min(page, total_pages)
     start_entry = (page - 1) * per_page + 1 if total_count > 0 else 0
     end_entry = min(page * per_page, total_count)
 
-    # Windowed pagination items matching Image 1: e.g. [1, '...', 4, 5, 6, '...', 155]
+    active_filters = sum([
+        bool(status and status != "ALL" and (q or status != "PENDING")),
+        bool(block and block != "ALL"),
+        bool(gender and gender != "ALL")
+    ])
+
     if total_pages <= 7:
         pagination_items = list(range(1, total_pages + 1))
     elif page <= 4:
@@ -1181,11 +1288,17 @@ def admin_list():
     else:
         pagination_items = [1, '...', page - 1, page, page + 1, '...', total_pages]
 
+    qargs = {k: v for k, v in {"q": q, "status": status, "block": block, "gender": gender}.items() if v and v != "ALL"}
+    base_query = urllib.parse.urlencode(qargs)
+    display_status = f"Search: {q}" if q else (status.replace('_', ' ').title() if status and status != "ALL" else "All Applications")
+
     return render_template("admin_list.html", rows=rows, status=display_status,
                            raw_status=status, page=page, total_pages=total_pages,
-                           total_count=total_count, per_page=per_page, mobile=mobile,
+                           total_count=total_count, per_page=per_page, q=q, mobile=q,
                            start_entry=start_entry, end_entry=end_entry,
-                           pagination_items=pagination_items)
+                           pagination_items=pagination_items, all_blocks=blocks,
+                           filter_status=status, filter_block=block, filter_gender=gender,
+                           active_filters=active_filters, base_query=base_query)
 
 
 @app.route("/admin/application/<int:app_id>")
@@ -1196,7 +1309,8 @@ def admin_view(app_id):
     cur = conn.cursor()
     cur.execute("SELECT application_no, applicant_name, mobile, dob, gender, "
                 "marital_status, village, block, bank_account, ifsc, doc_path, "
-                "status, submitted_at, decided_at, decided_by "
+                "status, submitted_at, decided_at, decided_by, "
+                "doc_name, doc_mime, (doc_data IS NOT NULL) AS has_doc_data "
                 "FROM applications WHERE id = %s", (app_id,))
     row = cur.fetchone()
     if not row:
@@ -1206,7 +1320,98 @@ def admin_view(app_id):
                 "WHERE application_id = %s ORDER BY at ASC", (app_id,))
     audit = cur.fetchall()
     cur.close(); conn.close()
-    return render_template("admin_view.html", a=row, app_id=app_id, audit=audit)
+
+    doc_path = row[10]
+    has_doc_data = bool(row[17]) if len(row) > 17 else False
+    has_document = bool(has_doc_data or (doc_path and os.path.exists(doc_path)))
+    doc_name = (row[15] if len(row) > 15 and row[15] else None) or (os.path.basename(doc_path) if doc_path else "document")
+    doc_mime = (row[16] if len(row) > 16 and row[16] else None) or ("application/pdf" if doc_name.lower().endswith(".pdf") else "image/jpeg")
+    is_image = (doc_mime.startswith("image/") if doc_mime else False) or doc_name.lower().endswith((".jpg", ".jpeg", ".png"))
+    is_pdf = (doc_mime == "application/pdf") or doc_name.lower().endswith(".pdf")
+
+    return render_template("admin_view.html", a=row, app_id=app_id, audit=audit,
+                           has_document=has_document, has_doc_data=has_doc_data,
+                           doc_name=doc_name, doc_mime=doc_mime,
+                           is_image=is_image, is_pdf=is_pdf)
+
+
+@app.route("/admin/application/<int:app_id>/document")
+def admin_view_document(app_id):
+    """Serve the applicant's uploaded verification document to an authenticated admin."""
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT doc_data, doc_mime, doc_name, doc_path, application_no "
+                "FROM applications WHERE id = %s", (app_id,))
+    row = cur.fetchone()
+    cur.close(); conn.close()
+    if not row:
+        abort(404)
+    doc_data, doc_mime, doc_name, doc_path, app_no = row
+    download = request.args.get("download", "0") == "1"
+
+    if doc_data is not None:
+        raw_bytes = bytes(doc_data)
+        mime = doc_mime or "application/octet-stream"
+        filename = doc_name or f"age_proof_{app_no}"
+        return send_file(
+            io.BytesIO(raw_bytes),
+            mimetype=mime,
+            as_attachment=download,
+            download_name=filename
+        )
+    elif doc_path and os.path.exists(doc_path):
+        mime = doc_mime or ("application/pdf" if doc_path.lower().endswith(".pdf") else "image/jpeg")
+        filename = doc_name or os.path.basename(doc_path)
+        return send_file(
+            doc_path,
+            mimetype=mime,
+            as_attachment=download,
+            download_name=filename
+        )
+    else:
+        abort(404)
+
+
+@app.route("/application/<int:app_id>/document")
+def citizen_view_document(app_id):
+    """Serve the applicant's own uploaded verification document to an authenticated citizen."""
+    if not session.get("logged_in") or not session.get("portal_mobile"):
+        return redirect(url_for("status_login"))
+    mobile = session["portal_mobile"]
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT doc_data, doc_mime, doc_name, doc_path, application_no "
+                "FROM applications WHERE id = %s AND mobile = %s", (app_id, mobile))
+    row = cur.fetchone()
+    cur.close(); conn.close()
+    if not row:
+        abort(404)
+    doc_data, doc_mime, doc_name, doc_path, app_no = row
+    download = request.args.get("download", "0") == "1"
+
+    if doc_data is not None:
+        raw_bytes = bytes(doc_data)
+        mime = doc_mime or "application/octet-stream"
+        filename = doc_name or f"age_proof_{app_no}"
+        return send_file(
+            io.BytesIO(raw_bytes),
+            mimetype=mime,
+            as_attachment=download,
+            download_name=filename
+        )
+    elif doc_path and os.path.exists(doc_path):
+        mime = doc_mime or ("application/pdf" if doc_path.lower().endswith(".pdf") else "image/jpeg")
+        filename = doc_name or os.path.basename(doc_path)
+        return send_file(
+            doc_path,
+            mimetype=mime,
+            as_attachment=download,
+            download_name=filename
+        )
+    else:
+        abort(404)
 
 
 def _admin_decide(app_id, new_status, note):

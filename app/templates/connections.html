@@ -7,7 +7,6 @@
 
 <p class="note">Third-party applications currently authorized to act for <b>{{ who }}</b>. Each sign-in ends automatically at the time shown; you can revoke access at any time.</p>
 
-{% if rows %}
 <div class="my-6">
   <table class="tbl" style="max-width:720px">
     <thead>
@@ -31,17 +30,28 @@
           </form>
         </td>
       </tr>
+      {% else %}
+      <tr>
+        <td colspan="4" class="text-center py-10 px-4">
+          <div class="flex flex-col items-center justify-center max-w-xs mx-auto text-center">
+            <div class="w-12 h-12 rounded-full bg-white border border-slate-200/90 flex items-center justify-center shadow-xs mb-3 text-slate-400">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+            <h4 class="text-sm font-bold text-slate-900 mb-1">No connected applications</h4>
+            <p class="text-xs text-slate-500 mb-0">No third-party application is currently authorized or signed in for you.</p>
+          </div>
+        </td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
+{% if rows %}
 <form method="post" action="{{ post_url }}" class="mt-4">
   <button class="btn" style="background:#475569;" type="submit">End all sessions</button>
 </form>
-{% else %}
-<div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 text-sm my-6 text-center">
-  No application is currently signed in for you.
-</div>
 {% endif %}
 {% endblock %}
