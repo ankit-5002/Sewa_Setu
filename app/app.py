@@ -8,6 +8,12 @@ Maintained in-house since 02/2026.
 """
 
 import os
+import time
+os.environ["TZ"] = "Asia/Kolkata"
+try:
+    time.tzset()
+except Exception:
+    pass
 import io
 import re
 import random
@@ -38,6 +44,44 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or config.get("app", "secret_key")
 # Two hours: elderly applicants fill the form slowly; the draft lives in the session.
 app.config["PERMANENT_SESSION_LIFETIME"] = 7200
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.jinja_env.auto_reload = True
+
+
+@app.template_filter("format_ist")
+def format_ist_filter(val, fmt="%Y-%m-%d %H:%M:%S IST"):
+    if not val:
+        return "-"
+    if isinstance(val, str):
+        try:
+            val = datetime.fromisoformat(val.replace("Z", "+00:00"))
+        except Exception:
+            return val if "IST" in val else f"{val} IST"
+    if hasattr(val, "tzinfo") and val.tzinfo is not None:
+        val = val.astimezone(IST)
+    elif isinstance(val, date) and not isinstance(val, datetime):
+        return val.strftime("%d/%m/%Y")
+    return val.strftime(fmt)
+
+
+@app.before_request
+def enforce_security_guards():
+    path = request.path
+    # 1. Admin route protection:
+    # Protect all /admin/* routes except the login page (/admin, /admin/) and logout (/admin/logout)
+    if path.startswith("/admin"):
+        if path not in ("/admin", "/admin/", "/admin/logout"):
+            if not session.get("admin"):
+                flash("Please log in to access the admin portal.")
+                return redirect(url_for("admin_login"))
+
+    # 2. Application form steps protection:
+    # User cannot access form steps, upload, or declaration without mobile verification
+    if path.startswith("/form/") or path in ("/upload", "/declaration"):
+        if not session.get("verified_mobile"):
+            flash("Please verify your mobile number with OTP first.")
+            return redirect(url_for("apply"))
+
 
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
@@ -95,14 +139,22 @@ def format_db_url(url):
 def get_db():
     db_url = os.environ.get("DATABASE_URL")
     if db_url:
-        return psycopg2.connect(format_db_url(db_url))
-    return psycopg2.connect(
-        host=os.environ.get("DB_HOST", config.get("database", "host")),
-        port=os.environ.get("DB_PORT", config.get("database", "port")),
-        dbname=os.environ.get("DB_NAME", config.get("database", "name")),
-        user=os.environ.get("DB_USER", config.get("database", "user")),
-        password=os.environ.get("DB_PASSWORD", config.get("database", "password")),
-    )
+        conn = psycopg2.connect(format_db_url(db_url))
+    else:
+        conn = psycopg2.connect(
+            host=os.environ.get("DB_HOST", config.get("database", "host")),
+            port=os.environ.get("DB_PORT", config.get("database", "port")),
+            dbname=os.environ.get("DB_NAME", config.get("database", "name")),
+            user=os.environ.get("DB_USER", config.get("database", "user")),
+            password=os.environ.get("DB_PASSWORD", config.get("database", "password")),
+        )
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SET timezone = 'Asia/Kolkata'")
+        conn.commit()
+    except Exception:
+        pass
+    return conn
 
 
 
@@ -149,7 +201,13 @@ def send_sms(mobile, text):
         conn = get_db()
         cur = conn.cursor()
         cur.execute("INSERT INTO sms_logs (mobile, text, created_at) VALUES (%s, %s, %s)",
-                    (mobile, text, datetime.now()))
+                    (mobile, text, now_ist()))
+        # Delete older messages if count exceeds 50
+        cur.execute("""
+            DELETE FROM sms_logs WHERE id NOT IN (
+                SELECT id FROM sms_logs ORDER BY id DESC LIMIT 50
+            )
+        """)
         conn.commit()
         cur.close()
         conn.close()
@@ -158,8 +216,10 @@ def send_sms(mobile, text):
         _FALLBACK_SMS.append({
             "to": mobile,
             "body": text,
-            "sent_at": datetime.now().strftime("%H:%M:%S")
+            "sent_at": now_ist().strftime("%H:%M:%S IST")
         })
+        while len(_FALLBACK_SMS) > 50:
+            _FALLBACK_SMS.pop(0)
 
     try:
         requests.post(SMS_GATEWAY_URL + "/api/send",
@@ -176,13 +236,13 @@ def deadline_remaining():
 
 
 def new_application_no():
-    return "SSP" + datetime.now().strftime("%y") + str(random.randint(100000, 999999))
+    return "SSP" + now_ist().strftime("%y") + str(random.randint(100000, 999999))
 
 
 def write_audit(cur, app_id, action, actor, note=""):
     cur.execute("INSERT INTO audit_log (application_id, action, actor, note, at) "
                 "VALUES (%s, %s, %s, %s, %s)",
-                (app_id, action, actor, note, datetime.now()))
+                (app_id, action, actor, note, now_ist()))
 
 
 # ---------------------------------------------------------------------------
@@ -203,6 +263,91 @@ def age_on(dob, on):
     return on.year - dob.year - ((on.month, on.day) < (dob.month, dob.day))
 
 
+def validate_personal_details(data):
+    """Validate Step 1 (Personal Details & Age Eligibility). Returns (errors, error_fields)."""
+    errors = []
+    error_fields = set()
+    name = sanitize(data.get("applicant_name"))
+    if not name:
+        errors.append("full name is required")
+        error_fields.add("applicant_name")
+
+    dob_raw = (data.get("dob") or "").strip()
+    if not dob_raw:
+        errors.append("date of birth is required")
+        error_fields.add("dob")
+    else:
+        dob = parse_dob(dob_raw)
+        if dob is None:
+            errors.append("date of birth must be given as DD/MM/YYYY")
+            error_fields.add("dob")
+        else:
+            today = now_ist().date()
+            if dob > today:
+                errors.append("date of birth cannot be in the future")
+                error_fields.add("dob")
+            else:
+                age = age_on(dob, today)
+                if age < MIN_AGE:
+                    errors.append("applicant must be %d years of age or above (calculated age: %d years)" % (MIN_AGE, age))
+                    error_fields.add("dob")
+
+    gender = (data.get("gender") or "").strip()
+    if not gender or gender not in ("Male", "Female", "Other"):
+        errors.append("gender is required")
+        error_fields.add("gender")
+
+    marital_status = (data.get("marital_status") or "").strip()
+    if not marital_status:
+        errors.append("marital status is required")
+        error_fields.add("marital_status")
+
+    return errors, list(error_fields)
+
+
+def validate_address_details(data):
+    """Validate Step 2 (Address Details). Returns (errors, error_fields)."""
+    errors = []
+    error_fields = set()
+    village = (data.get("village") or "").strip()
+    if not village:
+        errors.append("village is required")
+        error_fields.add("village")
+
+    block = (data.get("block") or "").strip()
+    if not block:
+        errors.append("block is required")
+        error_fields.add("block")
+    elif block not in BLOCKS:
+        errors.append("block must be one of: " + ", ".join(BLOCKS))
+        error_fields.add("block")
+
+    return errors, list(error_fields)
+
+
+def validate_bank_details(data):
+    """Validate Step 3 (Bank Details). Returns (errors, error_fields)."""
+    errors = []
+    error_fields = set()
+    bank_account = re.sub(r"[\s-]", "", data.get("bank_account") or "")
+    if not bank_account:
+        errors.append("bank account is required")
+        error_fields.add("bank_account")
+    elif not re.fullmatch(r"\d{9,18}", bank_account):
+        errors.append("bank account number must be 9 to 18 digits")
+        error_fields.add("bank_account")
+
+    ifsc = re.sub(r"[\s-]", "", (data.get("ifsc") or "")).upper()
+    if not ifsc:
+        errors.append("IFSC code is required")
+        error_fields.add("ifsc")
+    elif not re.fullmatch(r"[A-Z]{4}0[A-Z0-9]{6}", ifsc):
+        errors.append("IFSC must be 11 characters, e.g. SBIN0003077")
+        error_fields.add("ifsc")
+
+    return errors, list(error_fields)
+
+
 def validate_application(data, doc_path):
     """Validate a complete application. Returns (errors, cleaned).
 
@@ -210,6 +355,14 @@ def validate_application(data, doc_path):
     `cleaned` holds the normalised values ready for create_application().
     """
     errors = []
+    p_err, _ = validate_personal_details(data)
+    a_err, _ = validate_address_details(data)
+    b_err, _ = validate_bank_details(data)
+    errors.extend(p_err)
+    errors.extend(a_err)
+    errors.extend(b_err)
+
+    dob = parse_dob(data.get("dob"))
     cleaned = {
         "applicant_name": sanitize(data.get("applicant_name")),
         "village": (data.get("village") or "").strip(),
@@ -221,25 +374,9 @@ def validate_application(data, doc_path):
         "bank_account": re.sub(r"[\s-]", "", data.get("bank_account") or ""),
         "ifsc": re.sub(r"[\s-]", "", (data.get("ifsc") or "")).upper(),
         "doc_path": doc_path or "",
-        "dob": None,
+        "dob": dob,
     }
-    for label, key in (("full name", "applicant_name"), ("village", "village"),
-                       ("block", "block"), ("bank account", "bank_account")):
-        if not cleaned[key]:
-            errors.append("%s is required" % label)
-    if cleaned["block"] and cleaned["block"] not in BLOCKS:
-        errors.append("block must be one of: " + ", ".join(BLOCKS))
-    if cleaned["bank_account"] and not re.fullmatch(r"\d{9,18}", cleaned["bank_account"]):
-        errors.append("bank account number must be 9 to 18 digits")
-    if cleaned["ifsc"] and not re.fullmatch(r"[A-Z]{4}0[A-Z0-9]{6}", cleaned["ifsc"]):
-        errors.append("IFSC must be 11 characters, e.g. SBIN0003077")
-    dob = parse_dob(data.get("dob"))
-    if dob is None:
-        errors.append("date of birth must be given as DD/MM/YYYY")
-    else:
-        cleaned["dob"] = dob
-        if age_on(dob, now_ist().date()) < MIN_AGE:
-            errors.append("applicant must be %d years of age or above" % MIN_AGE)
+
     if not cleaned["doc_path"]:
         errors.append("age proof document is required")
     if now_ist() > SCHEME_DEADLINE:
@@ -271,7 +408,7 @@ def create_application(cur, mobile, cleaned):
         (app_no, cleaned["applicant_name"], mobile, cleaned["dob"], cleaned["gender"],
          cleaned["marital_status"], cleaned["husband_name"], cleaned["husband_employer"],
          cleaned["village"], cleaned["block"], cleaned["bank_account"], cleaned["ifsc"],
-         cleaned["doc_path"], datetime.now()))
+         cleaned["doc_path"], now_ist()))
     new_id = cur.fetchone()[0]
 
     # status portal account; password is DOB as DDMMYYYY per dept. circular
@@ -296,6 +433,14 @@ def index():
 @app.route("/about")
 def about():
     return render_template("about.html")
+
+
+@app.route("/images/<path:filename>")
+def serve_image(filename):
+    from urllib.parse import unquote
+    filename = unquote(filename)
+    path = os.path.join(BASE_DIR, "images", filename)
+    return send_file(path)
 
 
 @app.route("/__gateway/", defaults={"subpath": ""})
@@ -343,31 +488,46 @@ def gateway_proxy(subpath):
         conn = get_db()
         cur = conn.cursor()
         # 1. Fetch from sms_logs
-        cur.execute("SELECT id, mobile, text, created_at FROM sms_logs ORDER BY id DESC LIMIT 100")
+        cur.execute("SELECT id, mobile, text, created_at FROM sms_logs ORDER BY id DESC")
         for r in cur.fetchall():
-            messages.append({"id": f"sms-{r[0]}", "to": r[1], "text": r[2], "created_at": r[3]})
+            messages.append({"id": f"sms-{r[0]}", "raw_id": r[0], "type": "sms", "to": r[1], "text": r[2], "created_at": r[3]})
 
         # 2. Also fetch from otps table so existing OTPs are never missed
-        cur.execute("SELECT id, mobile, code, created_at FROM otps ORDER BY id DESC LIMIT 50")
+        cur.execute("SELECT id, mobile, code, created_at FROM otps ORDER BY id DESC")
         existing_signatures = {(m["to"], m["text"]) for m in messages}
         for r in cur.fetchall():
             text = f"Your Sewa Setu OTP is {r[2]}. Valid for 5 minutes."
             if (r[1], text) not in existing_signatures:
-                messages.append({"id": f"otp-{r[0]}", "to": r[1], "text": text, "created_at": r[3]})
+                messages.append({"id": f"otp-{r[0]}", "raw_id": r[0], "type": "otp", "to": r[1], "text": text, "created_at": r[3]})
 
         # Sort all messages by timestamp descending
         messages.sort(key=lambda x: x["created_at"] or datetime.min, reverse=True)
+
+        # If messages exceed 50 in count, delete the older ones one by one
+        if len(messages) > 50:
+            excess = messages[50:]
+            sms_ids_to_del = [m["raw_id"] for m in excess if m.get("type") == "sms"]
+            otp_ids_to_del = [m["raw_id"] for m in excess if m.get("type") == "otp"]
+            if sms_ids_to_del:
+                cur.execute("DELETE FROM sms_logs WHERE id = ANY(%s)", (sms_ids_to_del,))
+            if otp_ids_to_del:
+                cur.execute("DELETE FROM otps WHERE id = ANY(%s)", (otp_ids_to_del,))
+            conn.commit()
+            messages = messages[:50]
+
         cur.close()
         conn.close()
     except Exception as e:
         app.logger.warning("Gateway Console DB error: %s" % e)
+        while len(_FALLBACK_SMS) > 50:
+            _FALLBACK_SMS.pop(0)
         messages = [{"id": f"fallback-{i+1}", "to": m.get("to"), "text": m.get("body"), "created_at": None} for i, m in enumerate(reversed(_FALLBACK_SMS))]
 
-    now = datetime.now()
+    now = now_ist()
     rows = []
     for i, m in enumerate(messages[:50]):
         created_at = m.get("created_at")
-        sent_str = created_at.strftime("%H:%M:%S (%d %b)") if created_at else "Just now"
+        sent_str = created_at.strftime("%H:%M:%S (%d %b) IST") if created_at else "Just now"
 
         status_badge = '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:9999px;font-size:12px;font-weight:600;background:#dcfce7;color:#15803d"><span style="width:7px;height:7px;border-radius:50%;background:#22c55e"></span> Delivered</span>'
 
@@ -472,7 +632,12 @@ def apply():
     if deadline_remaining() is None:
         flash("The application window for this scheme has closed.")
         return redirect(url_for("index"))
+    if request.method == "GET":
+        session.pop("verified_mobile", None)
+        session.pop("form_data", None)
+        session.pop("doc_path", None)
     if request.method == "POST":
+        session.pop("verified_mobile", None)
         mobile = request.form.get("mobile", "").strip()
         captcha = request.form.get("captcha", "")
         try:
@@ -481,22 +646,29 @@ def apply():
             captcha_ok = False
         if not captcha_ok:
             flash("Security check answer is incorrect. Please try again.")
-            return render_template("apply.html", captcha_q=make_captcha())
+            return render_template("apply.html", captcha_q=make_captcha(),
+                                   mobile=mobile, error_fields=["captcha"])
         if len(mobile) != 10 or not mobile.isdigit():
             flash("Please enter a valid 10-digit mobile number.")
-            return render_template("apply.html", captcha_q=make_captcha())
+            return render_template("apply.html", captcha_q=make_captcha(),
+                                   mobile=mobile, error_fields=["mobile"])
         code = str(random.randint(100000, 999999))
         conn = get_db()
         cur = conn.cursor()
         cur.execute("INSERT INTO otps (mobile, code, created_at) VALUES (%s, %s, %s)",
-                    (mobile, code, datetime.now()))
+                     (mobile, code, now_ist()))
+        cur.execute("""
+            DELETE FROM otps WHERE id NOT IN (
+                SELECT id FROM otps ORDER BY id DESC LIMIT 50
+            )
+        """)
         conn.commit()
         cur.close(); conn.close()
         send_sms(mobile, "Your Sewa Setu OTP is %s. Valid for 5 minutes." % code)
         session.permanent = True
         session["apply_mobile"] = mobile
         return redirect(url_for("verify"))
-    return render_template("apply.html", captcha_q=make_captcha())
+    return render_template("apply.html", captcha_q=make_captcha(), mobile=session.get("apply_mobile", ""), error_fields=[])
 
 
 def make_captcha():
@@ -519,7 +691,7 @@ def verify():
         row = cur.fetchone()
         cur.close(); conn.close()
         if row and row[0] == code:
-            age = (datetime.now() - row[1]).total_seconds()
+            age = (now_ist() - row[1]).total_seconds()
             if age > OTP_VALIDITY_SECONDS:
                 app.logger.warning("otp expired mobile=%s age=%ds" % (mobile, int(age)))
                 flash("OTP expired. Please request a new OTP.")
@@ -527,7 +699,8 @@ def verify():
             session["verified_mobile"] = mobile
             return redirect(url_for("form_step", step=1))
         flash("Invalid OTP.")
-    return render_template("verify.html", mobile=mobile)
+        return render_template("verify.html", mobile=mobile, error_fields=["otp"])
+    return render_template("verify.html", mobile=mobile, error_fields=[])
 
 
 @app.route("/form/<int:step>", methods=["GET", "POST"])
@@ -546,18 +719,60 @@ def form_step(step):
         if step != 1 or request.method == "POST":
             return redirect(url_for("form_step", step=1))
         return render_template("form_step1.html", data={}, blocks=BLOCKS,
-                               existing=existing)
+                               existing=existing, error_fields=[])
+
+    # Progressive check on GET: ensure prior steps are valid before accessing later steps
+    if request.method == "GET":
+        saved = session.get("form_data", {})
+        if step >= 2:
+            s1_err, _ = validate_personal_details(saved)
+            if s1_err:
+                flash("Please complete personal details and verify eligibility first.")
+                return redirect(url_for("form_step", step=1))
+        if step >= 3:
+            s2_err, _ = validate_address_details(saved)
+            if s2_err:
+                flash("Please complete address details first.")
+                return redirect(url_for("form_step", step=2))
+
     if request.method == "POST":
         data = session.get("form_data", {})
+        action = request.form.get("action", "next")
         for k, v in request.form.items():
-            data[k] = v
+            if k != "action":
+                data[k] = v
         session["form_data"] = data
+        if action == "back":
+            if step == 1:
+                return redirect(url_for("verify"))
+            return redirect(url_for("form_step", step=step - 1))
+
+        # Validate current step before advancing
+        step_errors = []
+        err_fields = []
+        if step == 1:
+            step_errors, err_fields = validate_personal_details(data)
+        elif step == 2:
+            step_errors, err_fields = validate_address_details(data)
+        elif step == 3:
+            step_errors, err_fields = validate_bank_details(data)
+
+        if step_errors:
+            if len(step_errors) == 1:
+                flash(step_errors[0])
+            else:
+                flash("<strong>Please correct the following:</strong><ul class='list-disc list-inside mt-1.5 space-y-0.5'>" +
+                      "".join(f"<li>{e}</li>" for e in step_errors) + "</ul>")
+            return render_template("form_step%d.html" % step,
+                                   data=data, blocks=BLOCKS,
+                                   existing=None, error_fields=err_fields)
+
         if step < 3:
             return redirect(url_for("form_step", step=step + 1))
         return redirect(url_for("upload"))
     return render_template("form_step%d.html" % step,
                            data=session.get("form_data", {}), blocks=BLOCKS,
-                           existing=None)
+                           existing=None, error_fields=[])
 
 
 @app.route("/upload", methods=["GET", "POST"])
@@ -572,26 +787,55 @@ def upload():
     cur.close(); conn.close()
     if existing:
         return redirect(url_for("form_step", step=1))
+
+    # Guard: Ensure earlier steps are completed
+    saved = session.get("form_data", {})
+    s1_err, _ = validate_personal_details(saved)
+    if s1_err:
+        flash("Please complete personal details and verify eligibility first.")
+        return redirect(url_for("form_step", step=1))
+    s2_err, _ = validate_address_details(saved)
+    if s2_err:
+        flash("Please complete address details first.")
+        return redirect(url_for("form_step", step=2))
+    s3_err, _ = validate_bank_details(saved)
+    if s3_err:
+        flash("Please complete bank details first.")
+        return redirect(url_for("form_step", step=3))
+
     if request.method == "POST":
+        action = request.form.get("action", "next")
+        if action == "back":
+            return redirect(url_for("form_step", step=3))
         f = request.files.get("document")
         if f is None or f.filename == "":
+            if session.get("doc_path") and os.path.exists(session.get("doc_path")):
+                return redirect(url_for("declaration"))
             flash("Please choose a file to upload (JPG, PNG or PDF, up to 5 MB).")
-            return render_template("upload.html")
+            doc_path = session.get("doc_path", "")
+            doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
+            return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
         filename = f.filename.lower()
         content = f.read()
         if not filename.rsplit(".", 1)[-1] in ("pdf", "jpg", "jpeg", "png"):
             flash("Please upload a JPG, PNG or PDF file.")
-            return render_template("upload.html")
+            doc_path = session.get("doc_path", "")
+            doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
+            return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
         if len(content) > 5 * 1024 * 1024:
             flash("File is larger than 5 MB. Please upload a smaller file.")
-            return render_template("upload.html")
+            doc_path = session.get("doc_path", "")
+            doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
+            return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
         os.makedirs(UPLOAD_DIR, exist_ok=True)
         path = os.path.join(UPLOAD_DIR, "%s_%s" % (session["verified_mobile"], filename))
         with open(path, "wb") as out:
             out.write(content)
         session["doc_path"] = path
         return redirect(url_for("declaration"))
-    return render_template("upload.html")
+    doc_path = session.get("doc_path", "")
+    doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
+    return render_template("upload.html", doc_name=doc_name, error_fields=[])
 
 
 @app.route("/declaration", methods=["GET", "POST"])
@@ -606,6 +850,25 @@ def declaration():
     cur.close(); conn.close()
     if existing:
         return redirect(url_for("form_step", step=1))
+
+    # Guard: Ensure earlier steps and document upload are completed
+    saved = session.get("form_data", {})
+    s1_err, _ = validate_personal_details(saved)
+    if s1_err:
+        flash("Please complete personal details and verify eligibility first.")
+        return redirect(url_for("form_step", step=1))
+    s2_err, _ = validate_address_details(saved)
+    if s2_err:
+        flash("Please complete address details first.")
+        return redirect(url_for("form_step", step=2))
+    s3_err, _ = validate_bank_details(saved)
+    if s3_err:
+        flash("Please complete bank details first.")
+        return redirect(url_for("form_step", step=3))
+    if not session.get("doc_path") or not os.path.exists(session.get("doc_path")):
+        flash("Please upload an age proof document first.")
+        return redirect(url_for("upload"))
+
     if request.method == "POST":
         return handle_submission()
     # Preview everything before the applicant commits.
@@ -671,7 +934,13 @@ def generate_acknowledgment(cur, app_id):
     for label, val in zip(labels, row):
         try:
             pdf.cell(60, 8, label, border=1)
-            pdf.cell(0, 8, str(val), border=1, ln=1)
+            if label == "Submitted At" and val:
+                val_str = format_ist_filter(val)
+            elif isinstance(val, date):
+                val_str = val.strftime("%d/%m/%Y")
+            else:
+                val_str = str(val) if val is not None else "-"
+            pdf.cell(0, 8, val_str, border=1, ln=1)
         except Exception:
             pdf.cell(0, 8, "?", border=1, ln=1)
     pdf.ln(6)
@@ -754,7 +1023,7 @@ def withdraw_application(app_id):
     cur.execute("UPDATE applications SET status = 'WITHDRAWN', decided_at = %s, "
                 "decided_by = 'APPLICANT' WHERE id = %s AND mobile = %s "
                 "AND status = 'PENDING' RETURNING application_no",
-                (datetime.now(), app_id, mobile))
+                (now_ist(), app_id, mobile))
     row = cur.fetchone()
     if row:
         write_audit(cur, app_id, "WITHDRAW", "applicant:%s" % mobile)
@@ -820,6 +1089,8 @@ def reset_password():
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin_login():
+    if request.method == "GET" and session.get("admin"):
+        return redirect(url_for("admin_dashboard"))
     if request.method == "POST":
         if (ADMIN_PASSWORD and request.form.get("username") == ADMIN_USERNAME and
                 request.form.get("password") == ADMIN_PASSWORD):
@@ -831,6 +1102,15 @@ def admin_login():
     return render_template("admin_login.html")
 
 
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("admin", None)
+    session.pop("admin_user", None)
+    session.pop("logged_in", None)
+    flash("You have been logged out successfully.")
+    return redirect(url_for("admin_login"))
+
+
 @app.route("/admin/dashboard")
 def admin_dashboard():
     if not session.get("admin"):
@@ -840,7 +1120,7 @@ def admin_dashboard():
     cur.execute("SELECT status, count(*) FROM applications GROUP BY status")
     by_status = cur.fetchall()
     cur.execute("SELECT count(*) FROM applications WHERE status = 'PENDING' "
-                "AND submitted_at < %s", (datetime.now() - timedelta(days=SLA_DAYS),))
+                "AND submitted_at < %s", (now_ist() - timedelta(days=SLA_DAYS),))
     overdue = cur.fetchone()[0]
     cur.execute("SELECT block, count(*) FROM applications WHERE status = 'PENDING' "
                 "GROUP BY block ORDER BY count(*) DESC")
@@ -885,9 +1165,27 @@ def admin_list():
     rows = cur.fetchall()
     cur.close(); conn.close()
     total_pages = (total_count + per_page - 1) // per_page if total_count > 0 else 1
+    if page > total_pages and total_pages > 0:
+        page = total_pages
+
+    start_entry = (page - 1) * per_page + 1 if total_count > 0 else 0
+    end_entry = min(page * per_page, total_count)
+
+    # Windowed pagination items matching Image 1: e.g. [1, '...', 4, 5, 6, '...', 155]
+    if total_pages <= 7:
+        pagination_items = list(range(1, total_pages + 1))
+    elif page <= 4:
+        pagination_items = [1, 2, 3, 4, 5, '...', total_pages]
+    elif page >= total_pages - 3:
+        pagination_items = [1, '...'] + list(range(total_pages - 4, total_pages + 1))
+    else:
+        pagination_items = [1, '...', page - 1, page, page + 1, '...', total_pages]
+
     return render_template("admin_list.html", rows=rows, status=display_status,
                            raw_status=status, page=page, total_pages=total_pages,
-                           total_count=total_count, per_page=per_page, mobile=mobile)
+                           total_count=total_count, per_page=per_page, mobile=mobile,
+                           start_entry=start_entry, end_entry=end_entry,
+                           pagination_items=pagination_items)
 
 
 @app.route("/admin/application/<int:app_id>")
@@ -920,7 +1218,7 @@ def _admin_decide(app_id, new_status, note):
     cur = conn.cursor()
     cur.execute("UPDATE applications SET status = %s, decided_at = %s, decided_by = %s "
                 "WHERE id = %s AND status = 'PENDING' RETURNING application_no",
-                (new_status, datetime.now(), actor, app_id))
+                (new_status, now_ist(), actor, app_id))
     row = cur.fetchone()
     if row:
         write_audit(cur, app_id, new_status, "admin:%s" % actor, note)

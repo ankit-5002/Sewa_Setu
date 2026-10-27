@@ -1,18 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="steps"><b>Step 3 of 6:</b> Address Details</div>
-<h2>Address Details</h2>
+<div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200/80">
+  <div>
+    <div class="text-sm font-semibold text-slate-500 mb-2">Step 3 of 6</div>
+    <div class="step-progress-track w-40 sm:w-52 mb-0">
+      <div class="step-progress-fill" style="width: 50%;"></div>
+    </div>
+  </div>
+  <div class="font-purvsms text-right">
+    Address Details
+  </div>
+</div>
 <p class="text-slate-600 text-sm mb-6">Enter the permanent residential address within the State of Purvanchal.</p>
 
 <form method="post" class="space-y-4 max-w-lg">
   <div>
     <label>Village / Town *</label>
-    <input type="text" name="village" value="{{ data.get('village','') }}" placeholder="Village or town name" required>
+    <input type="text" name="village" value="{{ data.get('village','') }}" placeholder="Village or town name" class="{% if 'village' in (error_fields or []) %}field-error{% endif %}" required>
   </div>
 
   <div>
     <label>Block *</label>
-    <select name="block" required>
+    <select name="block" class="{% if 'block' in (error_fields or []) %}field-error{% endif %}" required>
       <option value="">--Select Block--</option>
       {% for b in blocks %}
       <option {% if data.get('block')==b %}selected{% endif %}>{{ b }}</option>
@@ -20,8 +29,9 @@
     </select>
   </div>
 
-  <div class="pt-4">
-    <button class="btn" type="submit">Save &amp; Continue</button>
+  <div class="flex items-center gap-3 pt-4">
+    <button type="submit" name="action" value="back" formnovalidate class="btn-secondary">Back</button>
+    <button class="btn" type="submit" name="action" value="next">Save &amp; Continue</button>
   </div>
 </form>
 {% endblock %}

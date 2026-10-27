@@ -1,15 +1,25 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="steps"><b>Step 1 of 6:</b> Mobile Verification</div>
-<h2>Enter OTP</h2>
+<div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200/80">
+  <div>
+    <div class="text-sm font-semibold text-slate-500 mb-2">Step 1 of 6</div>
+    <div class="step-progress-track w-40 sm:w-52 mb-0">
+      <div class="step-progress-fill" style="width: 16.6%;"></div>
+    </div>
+  </div>
+  <div class="font-purvsms text-right">
+    Mobile Verification
+  </div>
+</div>
 <p class="note">An OTP has been sent to <b class="text-slate-800">{{ mobile }}</b>. Check your SMS inbox.</p>
 
 <form method="post" class="space-y-4 max-w-md mt-6">
   <div>
     <label>6-Digit Verification Code</label>
-    <input type="text" name="otp" maxlength="6" placeholder="000000" style="max-width:180px; letter-spacing: 0.25em; font-size: 1.15rem; font-weight: bold; text-align: center;" required>
+    <input type="text" name="otp" maxlength="6" placeholder="000000" class="{% if 'otp' in (error_fields or []) %}field-error{% endif %}" style="max-width:180px; letter-spacing: 0.25em; font-size: 1.15rem; font-weight: bold; text-align: center;" required>
   </div>
-  <div class="pt-2">
+  <div class="flex items-center gap-3 pt-3">
+    <a href="/apply" class="btn-secondary">Back</a>
     <button class="btn" type="submit">Verify &amp; Continue</button>
   </div>
 </form>

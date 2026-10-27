@@ -1,7 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="steps"><b>Step 6 of 6:</b> Preview &amp; Declaration</div>
-<h2>Please check your application before submitting</h2>
+<div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200/80">
+  <div>
+    <div class="text-sm font-semibold text-slate-500 mb-2">Step 6 of 6</div>
+    <div class="step-progress-track w-40 sm:w-52 mb-0">
+      <div class="step-progress-fill" style="width: 100%;"></div>
+    </div>
+  </div>
+  <div class="font-purvsms text-right">
+    Preview &amp; Declaration
+  </div>
+</div>
 <p class="text-slate-600 text-sm mb-6">Review all entered details carefully. Once submitted, changes cannot be made directly.</p>
 
 <div class="my-6">
@@ -36,9 +45,12 @@
     {% for e in errors %}<li>{{ e }}</li>{% endfor %}
   </ul>
 </div>
+<div class="mt-4">
+  <a href="/upload" class="btn-secondary">Back to Document Upload</a>
+</div>
 {% else %}
 <div class="mt-8 p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs max-w-[680px]">
-  <h3 class="mt-0 mb-3">Applicant Declaration</h3>
+  <h3 class="font-purvsms mt-0 mb-3">Applicant Declaration</h3>
   <p class="text-slate-600 text-sm leading-relaxed mb-4">
     I hereby declare that the information furnished above is true to the best of my knowledge and belief. I understand that furnishing false information is punishable under applicable law and will result in immediate cancellation of pension.
   </p>
@@ -47,7 +59,8 @@
       <input type="checkbox" required>
       <span>I agree to the above declaration.</span>
     </label>
-    <div>
+    <div class="flex items-center gap-3 pt-2">
+      <a href="/upload" class="btn-secondary">Back to Upload</a>
       <button class="btn" type="submit">Submit Application</button>
     </div>
   </form>

@@ -11,6 +11,12 @@ Scheduled via cron, 02:00 daily. See deploy/crontab.
 
 import os
 import sys
+import time
+os.environ["TZ"] = "Asia/Kolkata"
+try:
+    time.tzset()
+except Exception:
+    pass
 import configparser
 from datetime import datetime, timedelta
 

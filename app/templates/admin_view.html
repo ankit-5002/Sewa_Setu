@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="flex items-center justify-between mb-4">
-  <h2>Application {{ a[0] }}</h2>
-  <a href="/admin/applications" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 no-underline transition-colors">&laquo; Back to list</a>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <h2 class="font-purvsms m-0">Application {{ a[0] }}</h2>
+  <div class="flex items-center gap-3">
+    <a href="/admin/applications" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-sky-50 text-sky-900 border border-sky-300 hover:bg-sky-100 no-underline transition-colors shadow-xs">Back to list</a>
+    <a href="/admin/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-sky-50 text-sky-900 border border-sky-300 hover:bg-sky-100 no-underline transition-colors shadow-xs">Dashboard</a>
+  </div>
 </div>
 
 <div class="my-6">
@@ -33,14 +36,14 @@
         {% endif %}
       </td>
     </tr>
-    <tr><th>Submitted</th><td class="text-xs text-slate-600">{{ a[12] }}</td></tr>
-    <tr><th>Decided</th><td class="text-xs text-slate-600">{{ a[13] or '-' }} {% if a[14] %}by <b>{{ a[14] }}</b>{% endif %}</td></tr>
+    <tr><th>Submitted</th><td class="text-xs text-slate-600">{{ a[12] | format_ist }}</td></tr>
+    <tr><th>Decided</th><td class="text-xs text-slate-600">{% if a[13] %}{{ a[13] | format_ist }}{% else %}-{% endif %} {% if a[14] %}by <b>{{ a[14] }}</b>{% endif %}</td></tr>
   </table>
 </div>
 
 {% if a[11] == 'PENDING' %}
 <div class="my-8 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs max-w-[720px]">
-  <h3 class="mt-0 mb-4">Official Decision</h3>
+  <h3 class="font-purvsms mt-0 mb-4">Official Decision</h3>
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <!-- Approve Form -->
     <form method="post" action="/admin/approve/{{ app_id }}" class="flex flex-col gap-2 p-4 rounded-xl bg-white border border-emerald-200">
@@ -60,7 +63,7 @@
 {% endif %}
 
 <div class="mt-8">
-  <h3>Audit Trail</h3>
+  <h3 class="font-purvsms">Audit Trail</h3>
   {% if audit %}
   <table class="tbl" style="max-width:720px">
     <thead>
@@ -74,7 +77,7 @@
     <tbody>
       {% for at, action, actor, note in audit %}
       <tr>
-        <td class="text-xs text-slate-500 font-mono">{{ at }}</td>
+        <td class="text-xs text-slate-500 font-mono">{{ at | format_ist }}</td>
         <td><span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-800">{{ action }}</span></td>
         <td class="text-xs text-slate-600">{{ actor }}</td>
         <td class="text-sm text-slate-700">{{ note or '-' }}</td>

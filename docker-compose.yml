@@ -15,6 +15,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      TZ: Asia/Kolkata
       DATABASE_URL: ${DATABASE_URL:-}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
@@ -35,6 +36,7 @@ services:
     # database is brought up to date), then hand over to cron for the nightly run.
     command: ["sh", "-c", "until python /app/scripts/deemed_approval.py; do sleep 5; done; exec cron -f"]
     environment:
+      TZ: Asia/Kolkata
       DATABASE_URL: ${DATABASE_URL:-}
     depends_on:
       - db
@@ -45,8 +47,12 @@ services:
     build: ./smsgw
     # internal only — reached by the app over the docker network and exposed to
     # users via the app at /__gateway/ (so no second host port is needed)
+    environment:
+      TZ: Asia/Kolkata
     expose:
       - "8025"
+    volumes:
+      - ./smsgw:/app
 
 volumes:
   pgdata:

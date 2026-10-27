@@ -4,8 +4,14 @@ Stands in for the telecom SMS provider. Messages sent via the API appear on the
 web console at / once "delivered", after a short carrier latency.
 """
 
+import os
 import random
 import time
+os.environ["TZ"] = "Asia/Kolkata"
+try:
+    time.tzset()
+except Exception:
+    pass
 from flask import Flask, request, jsonify, render_template_string
 
 app = Flask(__name__)
@@ -39,8 +45,13 @@ td,th{border:1px solid #ccc;padding:6px 10px;font-size:14px;text-align:left}
 """
 
 
+MAX_MESSAGES = 50
+_NEXT_MSG_ID = 1
+
+
 @app.route("/api/send", methods=["POST"])
 def send():
+    global _NEXT_MSG_ID
     data = request.get_json(force=True, silent=True) or request.form
     to = data.get("to", "")
     text = data.get("text", "")
@@ -48,13 +59,17 @@ def send():
         return jsonify({"status": "error", "reason": "to and text required"}), 400
     now = time.time()
     msg = {
-        "id": len(MESSAGES) + 1,
+        "id": _NEXT_MSG_ID,
         "to": to,
         "text": text,
         "sent_at": now,
         "delivery_at": now + random.randint(DELAY_MIN, DELAY_MAX),
     }
+    _NEXT_MSG_ID += 1
     MESSAGES.append(msg)
+    # If messages exceed 50 in count, delete older ones one by one
+    while len(MESSAGES) > MAX_MESSAGES:
+        MESSAGES.pop(0)
     return jsonify({"status": "queued", "id": msg["id"]})
 
 
@@ -79,11 +94,13 @@ def messages():
 @app.route("/")
 def console():
     now = time.time()
+    while len(MESSAGES) > MAX_MESSAGES:
+        MESSAGES.pop(0)
     view = []
-    for m in reversed(MESSAGES[-100:]):
+    for m in reversed(MESSAGES):
         view.append({
             "id": m["id"], "to": m["to"], "text": m["text"],
-            "sent_hhmm": time.strftime("%H:%M:%S", time.localtime(m["sent_at"])),
+            "sent_hhmm": time.strftime("%H:%M:%S IST", time.localtime(m["sent_at"])),
             "delivered": now >= m["delivery_at"],
             "eta": max(0, int(m["delivery_at"] - now)),
         })

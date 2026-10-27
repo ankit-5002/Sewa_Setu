@@ -10,7 +10,7 @@
         </svg>
       </div>
       <div>
-        <h3 class="text-base font-bold text-amber-950 mt-0 mb-1.5 leading-snug">
+        <h3 class="text-base font-bold text-amber-950 mt-0 mb-1.5 leading-snug font-jakarta">
           Application {{ existing[1] }} ({{ existing[2] }}) already exists for this mobile number.
         </h3>
         <p class="text-sm text-amber-800 leading-relaxed mb-4">
@@ -26,26 +26,35 @@
   </div>
 </div>
 {% else %}
-<div class="steps"><b>Step 2 of 6:</b> Personal Details</div>
-<h2>Personal Details</h2>
+<div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200/80">
+  <div>
+    <div class="text-sm font-semibold text-slate-500 mb-2">Step 2 of 6</div>
+    <div class="step-progress-track w-40 sm:w-52 mb-0">
+      <div class="step-progress-fill" style="width: 33.3%;"></div>
+    </div>
+  </div>
+  <div class="font-purvsms text-right">
+    Personal Details
+  </div>
+</div>
 <p class="text-slate-600 text-sm mb-6">Enter applicant identity information exactly as shown on the age proof document.</p>
 
 <form method="post" class="space-y-4 max-w-lg">
   <div>
     <label>Full Name of Applicant (as per age proof document) *</label>
-    <input type="text" name="applicant_name" value="{{ data.get('applicant_name','') }}" placeholder="e.g. Ram Kumar" required>
+    <input type="text" name="applicant_name" value="{{ data.get('applicant_name','') }}" placeholder="e.g. Ram Kumar" class="{% if 'applicant_name' in (error_fields or []) %}field-error{% endif %}" required>
   </div>
 
   <div>
     <label>Date of Birth (DD/MM/YYYY) *</label>
-    <input type="text" name="dob" placeholder="DD/MM/YYYY" value="{{ data.get('dob','') }}" style="max-width:200px" required>
+    <input type="text" name="dob" placeholder="DD/MM/YYYY" value="{{ data.get('dob','') }}" style="max-width:200px" class="{% if 'dob' in (error_fields or []) %}field-error{% endif %}" required>
     <p class="text-[12px] text-slate-500 mt-1">Applicant must be at least 60 years of age.</p>
   </div>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
       <label>Gender *</label>
-      <select name="gender" required>
+      <select name="gender" class="{% if 'gender' in (error_fields or []) %}field-error{% endif %}" required>
         <option value="">--Select Gender--</option>
         <option {% if data.get('gender')=='Male' %}selected{% endif %}>Male</option>
         <option {% if data.get('gender')=='Female' %}selected{% endif %}>Female</option>
@@ -55,7 +64,7 @@
 
     <div>
       <label>Marital Status *</label>
-      <select name="marital_status" required>
+      <select name="marital_status" class="{% if 'marital_status' in (error_fields or []) %}field-error{% endif %}" required>
         <option value="">--Select Status--</option>
         <option {% if data.get('marital_status')=='Married' %}selected{% endif %}>Married</option>
         <option {% if data.get('marital_status')=='Unmarried' %}selected{% endif %}>Unmarried</option>
@@ -69,9 +78,12 @@
     <input type="text" name="husband_name" value="{{ data.get('husband_name','') }}" placeholder="Late spouse name">
   </div>
 
-  <div class="pt-2">
+  <div class="pt-4">
     <p class="note">Name, date of birth, village, block and bank account are mandatory.</p>
-    <button class="btn" type="submit">Save &amp; Continue</button>
+    <div class="flex items-center gap-3 pt-2">
+      <button type="submit" name="action" value="back" formnovalidate class="btn-secondary">Back</button>
+      <button class="btn" type="submit" name="action" value="next">Save &amp; Continue</button>
+    </div>
   </div>
 </form>
 {% endif %}

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="flex items-center justify-between mb-4">
-  <h2>Application Status</h2>
+  <h2 class="font-purvsms">Application Status</h2>
   <div>
     {% if a[8] == 'APPROVED' %}
       <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">APPROVED</span>
@@ -27,8 +27,8 @@
     <tr><th>Block</th><td>{{ a[5] }}</td></tr>
     <tr><th>Bank Account</th><td class="font-mono">{{ a[6] }}</td></tr>
     <tr><th>IFSC</th><td class="font-mono">{{ a[7] }}</td></tr>
-    <tr><th>Submitted At</th><td class="text-xs text-slate-600">{{ a[9] }}</td></tr>
-    <tr><th>Decided At</th><td class="text-xs text-slate-600">{{ a[10] or '-' }}</td></tr>
+    <tr><th>Submitted At</th><td class="text-xs text-slate-600">{{ a[9] | format_ist }}</td></tr>
+    <tr><th>Decided At</th><td class="text-xs text-slate-600">{% if a[10] %}{{ a[10] | format_ist }}{% else %}-{% endif %}</td></tr>
   </table>
 </div>
 
@@ -43,7 +43,7 @@
 
 {% if a[8] == 'PENDING' %}
 <div class="mt-8 p-6 rounded-2xl bg-amber-50/70 border border-amber-200/80 max-w-[680px]">
-  <h3 class="text-amber-900 mt-0 mb-2">Made a mistake?</h3>
+  <h3 class="font-purvsms mt-0 mb-2">Made a mistake?</h3>
   <p class="text-slate-600 text-sm mb-4 leading-relaxed">A pending application can be withdrawn. After withdrawing, you may submit a fresh application with the same mobile number.</p>
   <form method="post" action="/application/{{ app_id }}/withdraw"
         onsubmit="return confirm('Withdraw application {{ a[0] }}? This cannot be undone.');">
@@ -59,7 +59,7 @@
       </svg>
     </div>
     <div class="flex-1">
-      <h3 class="text-rose-950 font-bold text-base m-0">Application Rejected</h3>
+      <h3 class="font-purvsms m-0">Application Rejected</h3>
       <p class="text-slate-600 text-xs mt-1 mb-3">Your application was not approved due to the following reason:</p>
       
       <div class="p-3.5 rounded-xl bg-white border border-rose-200/90 shadow-2xs">

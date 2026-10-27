@@ -1,7 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="steps"><b>Step 5 of 6:</b> Document Upload</div>
-<h2>Upload Age Proof Document</h2>
+<div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200/80">
+  <div>
+    <div class="text-sm font-semibold text-slate-500 mb-2">Step 5 of 6</div>
+    <div class="step-progress-track w-40 sm:w-52 mb-0">
+      <div class="step-progress-fill" style="width: 83.3%;"></div>
+    </div>
+  </div>
+  <div class="font-purvsms text-right">
+    Age Proof Document
+  </div>
+</div>
 <p class="text-slate-600 text-sm mb-6">Attach a scanned copy or clear photograph of the applicant's age verification document.</p>
 
 <div class="p-4 rounded-2xl bg-sky-50/80 border border-sky-200 text-sky-950 text-xs sm:text-sm mb-6 leading-relaxed max-w-lg">
@@ -14,13 +23,24 @@
   <p class="text-[11px] text-slate-500 m-0 mt-2">Accepted formats: <b>JPG, PNG, or PDF</b> (maximum file size: <b>5 MB</b>).</p>
 </div>
 
+{% if doc_name %}
+<div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm mb-6 flex items-center justify-between max-w-lg">
+  <div class="flex items-center gap-2">
+    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+    <span>Currently attached: <strong class="font-mono text-emerald-950">{{ doc_name }}</strong></span>
+  </div>
+  <span class="text-emerald-700 text-xs font-semibold">Uploaded</span>
+</div>
+{% endif %}
+
 <form method="post" enctype="multipart/form-data" class="space-y-4 max-w-lg">
   <div>
-    <label>Select Document *</label>
-    <input type="file" name="document" accept=".jpg,.jpeg,.png,.pdf" class="file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer" required>
+    <label>Select Document {% if doc_name %}(Optional if keeping current file){% else %}*{% endif %}</label>
+    <input type="file" name="document" accept=".jpg,.jpeg,.png,.pdf" class="{% if 'document' in (error_fields or []) %}field-error{% endif %} file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer" {% if not doc_name %}required{% endif %}>
   </div>
-  <div class="pt-4">
-    <button class="btn" type="submit">Upload &amp; Continue</button>
+  <div class="flex items-center gap-3 pt-4">
+    <button type="submit" name="action" value="back" formnovalidate class="btn-secondary">Back</button>
+    <button class="btn" type="submit" name="action" value="next">{% if doc_name %}Continue with Document{% else %}Upload &amp; Continue{% endif %}</button>
   </div>
 </form>
 {% endblock %}

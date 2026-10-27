@@ -1,23 +1,30 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="steps">
-  <b>Step 1 of 6:</b> Mobile Verification
+<div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200/80">
+  <div>
+    <div class="text-sm font-semibold text-slate-500 mb-2">Step 1 of 6</div>
+    <div class="step-progress-track w-40 sm:w-52 mb-0">
+      <div class="step-progress-fill" style="width: 16.6%;"></div>
+    </div>
+  </div>
+  <div class="font-purvsms text-right">
+    Mobile Verification
+  </div>
 </div>
-
-<h2>Mobile Verification</h2>
 <p class="text-slate-600 text-sm mb-6">Enter your 10-digit mobile number to begin your pension application. We'll send a one-time verification code.</p>
 
 <form method="post" class="space-y-4 max-w-md">
   <div>
     <label>Mobile Number</label>
-    <input type="text" name="mobile" maxlength="10" placeholder="10-digit mobile number" required>
+    <input type="text" name="mobile" maxlength="10" placeholder="10-digit mobile number" value="{{ mobile or '' }}" class="{% if 'mobile' in (error_fields or []) %}field-error{% endif %}" required>
   </div>
   <div>
     <label>Security Check: What is <span class="font-bold text-slate-900">{{ captcha_q }}</span>?</label>
-    <input type="text" name="captcha" style="max-width:140px" placeholder="Answer" required>
+    <input type="text" name="captcha" style="max-width:140px" placeholder="Answer" class="{% if 'captcha' in (error_fields or []) %}field-error{% endif %}" required>
   </div>
-  <div class="pt-2">
-    <button class="btn w-full sm:w-auto" type="submit">Send OTP</button>
+  <div class="flex items-center gap-3 pt-2">
+    <a href="/" class="btn-secondary">Back to Home</a>
+    <button class="btn" type="submit">Send OTP</button>
   </div>
 </form>
 

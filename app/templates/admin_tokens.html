@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="flex items-center justify-between mb-4">
-  <h2>Program Tokens</h2>
-  <a href="/admin/dashboard" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 no-underline transition-colors">&laquo; Dashboard</a>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <h2 class="font-purvsms m-0">Program Tokens</h2>
+  <div class="flex items-center gap-3">
+    <a href="/admin/dashboard" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-sky-50 text-sky-900 border border-sky-300 hover:bg-sky-100 no-underline transition-colors shadow-xs">&laquo; Dashboard</a>
+  </div>
 </div>
 
 <p class="note">Long-lived tokens for unattended programs acting as a block officer. For applications used by a person, the person signs in and consents through the portal's OAuth flow instead (see README).</p>
@@ -15,7 +17,7 @@
 {% endif %}
 
 <div class="my-8 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs max-w-xl">
-  <h3 class="mt-0 mb-4">Issue New Token</h3>
+  <h3 class="font-purvsms mt-0 mb-4">Issue New Token</h3>
   <form method="post" class="space-y-4">
     <div>
       <label>Label</label>
@@ -36,7 +38,7 @@
 </div>
 
 <div class="my-8">
-  <h3>Issued Program Tokens</h3>
+  <h3 class="font-purvsms">Issued Program Tokens</h3>
   <div class="overflow-x-auto">
     <table class="tbl">
       <thead>
@@ -45,8 +47,8 @@
           <th>Subject</th>
           <th>Audience</th>
           <th>Issued by</th>
-          <th>Created</th>
-          <th>Expires</th>
+          <th>Created (IST)</th>
+          <th>Expires (IST)</th>
         </tr>
       </thead>
       <tbody>
@@ -56,8 +58,8 @@
           <td class="text-xs font-mono">{{ s }}</td>
           <td class="text-xs text-slate-600">{{ a }}</td>
           <td class="text-xs">{{ b }}</td>
-          <td class="text-xs text-slate-500">{{ c }}</td>
-          <td class="text-xs text-slate-500">{{ e }}</td>
+          <td class="text-xs text-slate-500">{{ c | format_ist }}</td>
+          <td class="text-xs text-slate-500">{{ e | format_ist }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -66,15 +68,15 @@
 </div>
 
 <div class="my-8">
-  <h3>Your Current Officer Sign-Ins (through applications)</h3>
+  <h3 class="font-purvsms">Your Current Officer Sign-Ins (through applications)</h3>
   {% if grants %}
   <div class="overflow-x-auto">
     <table class="tbl" style="max-width:720px">
       <thead>
         <tr>
           <th>Application</th>
-          <th>Signed In</th>
-          <th>Ends</th>
+          <th>Signed In (IST)</th>
+          <th>Ends (IST)</th>
           <th></th>
         </tr>
       </thead>
@@ -82,8 +84,8 @@
         {% for h, name, cid, c, e in grants %}
         <tr>
           <td class="font-semibold text-slate-900">{{ name or cid }}</td>
-          <td class="text-xs text-slate-600">{{ c }}</td>
-          <td class="text-xs text-slate-600">{{ e }}</td>
+          <td class="text-xs text-slate-600">{{ c | format_ist }}</td>
+          <td class="text-xs text-slate-600">{{ e | format_ist }}</td>
           <td style="text-align: right;">
             <form method="post" style="display:inline">
               <input type="hidden" name="revoke_subject" value="{{ subject }}">
@@ -102,14 +104,14 @@
 </div>
 
 <div class="my-8">
-  <h3>Applications That Have Registered</h3>
+  <h3 class="font-purvsms">Applications That Have Registered</h3>
   <div class="overflow-x-auto">
     <table class="tbl" style="max-width:680px">
       <thead>
         <tr>
           <th>Name</th>
           <th>Registration</th>
-          <th>Since</th>
+          <th>Since (IST)</th>
         </tr>
       </thead>
       <tbody>
@@ -117,7 +119,7 @@
         <tr>
           <td class="font-semibold text-slate-900">{{ n }}</td>
           <td><span class="inline-flex px-2 py-0.5 rounded text-xs font-mono bg-slate-100 text-slate-700">{{ k }}</span></td>
-          <td class="text-xs text-slate-500">{{ c }}</td>
+          <td class="text-xs text-slate-500">{{ c | format_ist }}</td>
         </tr>
         {% endfor %}
       </tbody>

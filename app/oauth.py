@@ -26,6 +26,11 @@ Long-lived "program tokens" for unattended use are issued by an administrator at
 import os
 import json
 import time
+os.environ["TZ"] = "Asia/Kolkata"
+try:
+    time.tzset()
+except Exception:
+    pass
 import base64
 import hashlib
 import secrets

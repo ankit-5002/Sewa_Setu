@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="flex items-center justify-between mb-4">
-  <h2>Connected Applications</h2>
+  <h2 class="font-purvsms">Connected Applications</h2>
   <a href="/status" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 no-underline transition-colors">&laquo; Status Portal</a>
 </div>
 
@@ -13,8 +13,8 @@
     <thead>
       <tr>
         <th>Application</th>
-        <th>Signed In</th>
-        <th>Session Ends</th>
+        <th>Signed In (IST)</th>
+        <th>Session Ends (IST)</th>
         <th></th>
       </tr>
     </thead>
@@ -22,8 +22,8 @@
       {% for h, name, cid, c, e in rows %}
       <tr>
         <td class="font-semibold text-slate-900">{{ name or cid }}</td>
-        <td class="text-xs text-slate-600 font-mono">{{ c }}</td>
-        <td class="text-xs text-slate-600 font-mono">{{ e }}</td>
+        <td class="text-xs text-slate-600 font-mono">{{ c | format_ist }}</td>
+        <td class="text-xs text-slate-600 font-mono">{{ e | format_ist }}</td>
         <td style="text-align: right;">
           <form method="post" action="{{ post_url }}" style="display:inline">
             <input type="hidden" name="token_hash" value="{{ h }}">

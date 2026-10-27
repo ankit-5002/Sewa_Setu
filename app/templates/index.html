@@ -6,10 +6,10 @@
 <title>Sewa Setu — Old Age Pension Portal</title>
 <!-- Tailwind CSS CDN with forms and container-queries -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<!-- Google Fonts: Inter for UI and Playfair Display for the editorial serif headline -->
+<!-- Google Fonts: Inter, Playfair Display, and Plus Jakarta Sans -->
 <link href="https://fonts.googleapis.com" rel="preconnect">
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@1,400;1,600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script data-purpose="tailwind-config">
     tailwind.config = {
       theme: {
@@ -17,6 +17,7 @@
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
             serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            jakarta: ["'Plus Jakarta Sans'", 'system-ui', '-apple-system', 'sans-serif'],
           },
           colors: {
             brand: {
@@ -31,6 +32,23 @@
     }
 </script>
 <style data-purpose="ambient-backgrounds">
+    /* PurvSMS Gateway Console Header Style: 22px, font-weight 700, #0f172a, Plus Jakarta Sans */
+    .font-purvsms,
+    .font-jakarta,
+    h2 {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      font-size: 22px !important;
+      font-weight: 700 !important;
+      font-style: normal !important;
+      color: #0f172a !important;
+      letter-spacing: -0.01em !important;
+      line-height: 1.3 !important;
+    }
+
+    .font-serif {
+      font-family: 'Playfair Display', Georgia, serif !important;
+    }
+
     /* Subtle elevated cards with soft sky drop shadows */
     .elevated-card {
       box-shadow: 0 20px 40px -15px rgba(15, 45, 80, 0.07), 0 0 0 1px rgba(255, 255, 255, 0.8);
@@ -92,11 +110,7 @@
   </div>
   <div class="flex flex-col text-left">
     <div class="flex items-center gap-2.5">
-      <span class="text-xl font-serif font-bold tracking-tight text-slate-900">Sewa Setu</span>
-      <span class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-400/60 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        LIVE PORTAL
-      </span>
+      <span class="text-xl font-serif not-italic font-bold tracking-tight text-slate-900">Sewa Setu</span>
     </div>
     <span class="text-xs text-slate-500 font-normal tracking-wide mt-0.5">
       Department of Social Welfare • Govt. of Purvanchal
@@ -222,7 +236,7 @@
 <section class="max-w-6xl mx-auto px-4 py-16 -mt-8 relative z-30" id="how-it-works">
 <!-- Section Title & Orange Accent Bar -->
 <div class="text-center mb-12">
-  <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 mb-2.5">
+  <h2 class="font-purvsms tracking-tight text-slate-900 mb-2.5">
     How to Apply
   </h2>
   <div class="w-14 h-1 bg-amber-500 mx-auto rounded-full"></div>
@@ -249,7 +263,7 @@
           <path d="M71 86L73.5 88.5L78 84" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
         </svg>
       </div>
-      <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-2 tracking-tight">1. Mobile &amp; OTP Verification</h3>
+      <h3 class="text-base sm:text-lg font-jakarta font-bold text-slate-900 mb-2 tracking-tight">1. Mobile &amp; OTP Verification</h3>
       <p class="text-slate-600 text-sm leading-relaxed max-w-[220px]">Verify your mobile number with OTP.</p>
     </div>
 
@@ -268,7 +282,7 @@
           <line stroke="#3b82f6" stroke-linecap="round" stroke-width="2" x1="38" x2="52" y1="66" y2="73"></line>
         </svg>
       </div>
-      <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-2 tracking-tight">2. Fill Application Form</h3>
+      <h3 class="text-base sm:text-lg font-jakarta font-bold text-slate-900 mb-2 tracking-tight">2. Fill Application Form</h3>
       <p class="text-slate-600 text-sm leading-relaxed max-w-[220px]">Fill the application form (personal details, address, bank details).</p>
     </div>
 
@@ -288,7 +302,7 @@
           <line stroke="#fdba74" stroke-dasharray="2 3" stroke-width="2" x1="36" x2="84" y1="64" y2="64"></line>
         </svg>
       </div>
-      <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-2 tracking-tight">3. Upload Age Proof</h3>
+      <h3 class="text-base sm:text-lg font-jakarta font-bold text-slate-900 mb-2 tracking-tight">3. Upload Age Proof</h3>
       <p class="text-slate-600 text-sm leading-relaxed max-w-[220px]">Upload your age proof document (JPG or PDF, maximum 5 MB).</p>
     </div>
 
@@ -307,7 +321,7 @@
           <path d="M36 36L44 44L64 28" stroke="#8b5cf6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
         </svg>
       </div>
-      <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-2 tracking-tight">4. Submit &amp; Track</h3>
+      <h3 class="text-base sm:text-lg font-jakarta font-bold text-slate-900 mb-2 tracking-tight">4. Submit &amp; Track</h3>
       <p class="text-slate-600 text-sm leading-relaxed max-w-[220px]">Submit the declaration. Note down your Application Number.</p>
     </div>
   </div>

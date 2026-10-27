@@ -1,26 +1,36 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="steps"><b>Step 4 of 6:</b> Bank Details</div>
-<h2>Bank Details for Pension Disbursement</h2>
+<div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200/80">
+  <div>
+    <div class="text-sm font-semibold text-slate-500 mb-2">Step 4 of 6</div>
+    <div class="step-progress-track w-40 sm:w-52 mb-0">
+      <div class="step-progress-fill" style="width: 66.6%;"></div>
+    </div>
+  </div>
+  <div class="font-purvsms text-right">
+    Bank Details
+  </div>
+</div>
 <p class="text-slate-600 text-sm mb-6">Pension (Rs. 250/month) will be transferred directly to this bank account via Direct Benefit Transfer (DBT).</p>
 
 <form method="post" class="space-y-4 max-w-lg">
   <div>
     <label>Bank Account Number *</label>
-    <input type="text" name="bank_account" value="{{ data.get('bank_account','') }}" placeholder="Applicant's bank account number" required>
+    <input type="text" name="bank_account" value="{{ data.get('bank_account','') }}" placeholder="Applicant's bank account number" class="{% if 'bank_account' in (error_fields or []) %}field-error{% endif %}" required>
   </div>
 
   <div>
     <label>IFSC Code *</label>
-    <input type="text" name="ifsc" value="{{ data.get('ifsc','') }}" placeholder="e.g. SBIN0001234" style="max-width:260px; text-transform: uppercase;" required>
+    <input type="text" name="ifsc" value="{{ data.get('ifsc','') }}" placeholder="e.g. SBIN0001234" style="max-width:260px; text-transform: uppercase;" class="{% if 'ifsc' in (error_fields or []) %}field-error{% endif %}" required>
   </div>
 
   <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs my-4 leading-relaxed">
     <strong>Important:</strong> Ensure the bank account is active, seeded with Aadhaar/Mobile, and is in the name of the applicant.
   </div>
 
-  <div class="pt-2">
-    <button class="btn" type="submit">Save &amp; Continue</button>
+  <div class="flex items-center gap-3 pt-3">
+    <button type="submit" name="action" value="back" formnovalidate class="btn-secondary">Back</button>
+    <button class="btn" type="submit" name="action" value="next">Save &amp; Continue</button>
   </div>
 </form>
 {% endblock %}

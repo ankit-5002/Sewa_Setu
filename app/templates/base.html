@@ -7,11 +7,11 @@
   <title>Sewa Setu — Old Age Pension Portal</title>
   <!-- Tailwind CSS CDN with forms and container-queries -->
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <!-- Google Fonts: Inter for UI and Playfair Display for headers -->
+  <!-- Google Fonts: Inter, Playfair Display, and Plus Jakarta Sans -->
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@1,400;1,600&amp;display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     rel="stylesheet">
   <script data-purpose="tailwind-config">
     tailwind.config = {
@@ -20,6 +20,7 @@
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
             serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            jakarta: ["'Plus Jakarta Sans'", 'system-ui', '-apple-system', 'sans-serif'],
           },
           colors: {
             brand: {
@@ -66,28 +67,44 @@
       box-sizing: border-box;
     }
 
-    /* Headings - Simple non-italic modern sans-serif */
+    /* PurvSMS Gateway Console Header Style: 22px, font-weight 700, #0f172a, Plus Jakarta Sans */
+    .font-purvsms,
+    .font-jakarta,
     h2 {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 1.75rem;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      font-size: 22px !important;
+      font-weight: 700 !important;
+      font-style: normal !important;
+      color: #0f172a !important;
+      letter-spacing: -0.01em !important;
+      line-height: 1.3 !important;
+    }
+
+    .font-serif {
+      font-family: 'Playfair Display', Georgia, serif !important;
+    }
+
+    h1 {
+      font-size: 2.25rem;
       font-weight: 700;
       font-style: normal;
       color: #0f172a;
+      line-height: 1.2;
+    }
+
+    h2 {
       margin-top: 0;
       margin-bottom: 1.25rem;
-      letter-spacing: -0.025em;
-      line-height: 1.25;
     }
 
     h3 {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 1.15rem;
       font-weight: 700;
       font-style: normal;
-      color: #1e293b;
-      margin-top: 1.75rem;
+      color: #0f172a;
+      margin-top: 1.5rem;
       margin-bottom: 0.75rem;
-      letter-spacing: -0.01em;
     }
 
     p {
@@ -195,7 +212,38 @@
       background: #334155 !important;
     }
 
-    /* Steps Indicator Badge */
+    /* Secondary Button (for Back / Cancel actions) */
+    .btn-secondary {
+      background: #ffffff;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.75rem;
+      padding: 0.65rem 1.4rem;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .btn-secondary:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+      color: #0f172a;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+      text-decoration: none;
+    }
+
+    .btn-secondary:active {
+      transform: scale(0.98);
+    }
+
+    /* Steps Indicator Badge & Capsule Progress Bar */
     .steps {
       display: inline-flex;
       align-items: center;
@@ -207,7 +255,7 @@
       color: #0369a1;
       font-size: 0.8125rem;
       font-weight: 500;
-      margin-bottom: 1.25rem;
+      margin-bottom: 0.75rem;
     }
 
     .steps b {
@@ -215,17 +263,56 @@
       font-weight: 700;
     }
 
-    /* Alert / Flash Message */
+    .step-progress-track {
+      background-color: #e2ddd5;
+      border-radius: 9999px;
+      height: 0.5rem; /* 8px */
+      overflow: hidden;
+    }
+
+    .step-progress-fill {
+      background-color: #16a34a;
+      height: 0.5rem;
+      border-radius: 9999px;
+      transition: width 0.35s ease-in-out;
+    }
+
+    /* Alert / Flash Message - Sized to match message content */
     .flash {
       background: #fff1f2;
       border: 1px solid #fecdd3;
       color: #be123c;
-      padding: 0.85rem 1.25rem;
-      border-radius: 1rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.85rem;
       margin: 1.25rem 0;
       font-size: 0.875rem;
       font-weight: 500;
       box-shadow: 0 2px 4px rgba(225, 29, 72, 0.05);
+      width: fit-content;
+      max-width: 100%;
+      box-sizing: border-box;
+      display: block;
+    }
+
+    /* Field Error State - Red outline until fixed */
+    .field-error,
+    input.field-error,
+    select.field-error {
+      border-color: #ef4444 !important;
+      outline: 2px solid #ef4444 !important;
+      outline-offset: -1px !important;
+      background-color: #fef2f2 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+    }
+
+    .field-error:focus,
+    input.field-error:focus,
+    select.field-error:focus {
+      border-color: #dc2626 !important;
+      outline: 2px solid #dc2626 !important;
+      outline-offset: -1px !important;
+      box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.25) !important;
+      background-color: #ffffff !important;
     }
 
     /* Note text */
@@ -237,50 +324,81 @@
       margin-bottom: 0.75rem;
     }
 
-    /* Modernized Tables - Matching Leaderboard / Dashboard Design */
+    /* Modernized Tables - Matching Single Clean Border Design */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 0.75rem;
+      border: 1px solid #e2e8f0;
+      background: rgba(255, 255, 255, 0.85);
+      margin-top: 0.75rem;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+    }
+
+    .table-container table,
+    .table-container table.tbl,
+    .table-container > table.tbl {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: none !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+
     table.tbl {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      border: 1px solid rgba(203, 213, 225, 0.7);
-      border-radius: 1.25rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
       overflow: hidden;
       margin-top: 0.75rem;
       margin-bottom: 1.5rem;
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 4px 15px -3px rgba(15, 45, 80, 0.04), 0 2px 6px -2px rgba(15, 45, 80, 0.02);
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
     }
 
     table.tbl th {
-      background: rgba(226, 232, 240, 0.75);
+      background: rgba(241, 245, 249, 0.85);
       color: #475569;
       font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      padding: 0.9rem 1.25rem;
-      border-bottom: 1px solid rgba(203, 213, 225, 0.8);
+      padding: 0.85rem 1.25rem;
+      border-top: none !important;
+      border-left: none !important;
+      border-right: none !important;
+      border-bottom: 1px solid #e2e8f0 !important;
       text-align: left;
       white-space: nowrap;
     }
 
     table.tbl td {
-      padding: 0.95rem 1.25rem;
+      padding: 0.9rem 1.25rem;
       font-size: 0.875rem;
       color: #1e293b;
-      border-bottom: 1px solid rgba(226, 232, 240, 0.65);
+      border-top: none !important;
+      border-left: none !important;
+      border-right: none !important;
+      border-bottom: 1px solid #f1f5f9;
       text-align: left;
       transition: background-color 0.15s ease;
     }
 
-    table.tbl tr:last-child td {
-      border-bottom: none;
+    /* Single border line at bottom: eliminate bottom line from last row */
+    table.tbl tr:last-child td,
+    table.tbl tbody tr:last-child td,
+    .table-container table.tbl tr:last-child td,
+    .table-container table.tbl tbody tr:last-child td {
+      border-bottom: none !important;
     }
 
     table.tbl tbody tr:hover td {
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.95);
     }
 
     /* Global Link styling */
@@ -335,12 +453,7 @@
           </div>
           <div class="flex flex-col text-left">
             <div class="flex items-center gap-2.5">
-              <span class="text-xl font-serif font-bold tracking-tight text-slate-900">Sewa Setu</span>
-              <span
-                class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-400/60 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                LIVE PORTAL
-              </span>
+              <span class="text-xl font-serif not-italic font-bold tracking-tight text-slate-900">Sewa Setu</span>
             </div>
             <span class="text-xs text-slate-500 font-normal tracking-wide mt-0.5">
               Department of Social Welfare • Govt. of Purvanchal
@@ -421,12 +534,52 @@
     </div>
   </footer>
 
-  <!-- Interactive Accessibility Font Sizing -->
+  <!-- Interactive Accessibility Font Sizing & Form Field Error Clearing -->
   <script>
     let currentZoom = 100;
     function adjustFontSize(delta) {
       currentZoom = Math.min(Math.max(currentZoom + (delta * 10), 80), 130);
       document.documentElement.style.fontSize = currentZoom + '%';
+    }
+
+    // Automatically remove red outline as soon as user types or changes the field
+    document.addEventListener("input", function(e) {
+      if (e.target && e.target.classList.contains("field-error")) {
+        e.target.classList.remove("field-error");
+      }
+    });
+    document.addEventListener("change", function(e) {
+      if (e.target && e.target.classList.contains("field-error")) {
+        e.target.classList.remove("field-error");
+      }
+    });
+    // Mark HTML5 invalid inputs with red outline
+    document.addEventListener("invalid", function(e) {
+      if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")) {
+        e.target.classList.add("field-error");
+      }
+    }, true);
+
+    // Auto-vanish "You have been logged out successfully." after 2 seconds
+    function handleLogoutFlashVanish() {
+      const flashes = document.querySelectorAll(".flash");
+      flashes.forEach(function(el) {
+        if (el.textContent && el.textContent.trim().toLowerCase().includes("logged out successfully")) {
+          setTimeout(function() {
+            el.style.transition = "opacity 0.4s ease-out, transform 0.4s ease-out";
+            el.style.opacity = "0";
+            el.style.transform = "translateY(-6px)";
+            setTimeout(function() {
+              el.style.display = "none";
+            }, 400);
+          }, 2000);
+        }
+      });
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", handleLogoutFlashVanish);
+    } else {
+      handleLogoutFlashVanish();
     }
   </script>
 
