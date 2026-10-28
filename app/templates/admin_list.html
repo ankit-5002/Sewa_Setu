@@ -43,12 +43,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
         </div>
-        <input type="text" name="q" placeholder="Search by Application No, Applicant Name, or Mobile..." value="{{ q or '' }}"
+        <input type="text" name="q" placeholder="Search by Application No, Applicant Name, or Mobile..."
+          value="{{ q or '' }}"
           style="padding-left: 2.75rem !important; padding-right: 4.5rem !important; height: 42px !important; border-radius: 0.375rem !important; max-width: none !important;"
           class="w-full bg-white border border-slate-300 text-sm shadow-2xs focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800 outline-none transition-all">
         {% if q %}
         <div class="absolute right-3 top-0 bottom-0 flex items-center">
-          <a href="/admin/applications" class="text-xs text-slate-400 hover:text-slate-700 font-medium no-underline">Clear</a>
+          <a href="/admin/applications"
+            class="text-xs text-slate-400 hover:text-slate-700 font-medium no-underline">Clear</a>
         </div>
         {% endif %}
       </div>
@@ -64,11 +66,14 @@
         style="height: 42px !important; border-radius: 0.375rem !important;"
         class="inline-flex items-center gap-2 px-3.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-sm font-semibold transition-all shadow-2xs cursor-pointer">
         <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z">
+          </path>
         </svg>
         <span>Filters</span>
         {% if active_filters %}
-        <span class="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full text-xs font-bold bg-sky-600 text-white leading-none">
+        <span
+          class="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full text-xs font-bold bg-sky-600 text-white leading-none">
           {{ active_filters }}
         </span>
         {% endif %}
@@ -83,41 +88,55 @@
   </div>
 
   <!-- Filter Panel -->
-  <div id="filterPanel" class="{% if not active_filters %}hidden{% endif %} mt-3 p-4 rounded-xl bg-slate-50/90 border border-slate-200 shadow-xs">
+  <div id="filterPanel"
+    class="{% if not active_filters %}hidden{% endif %} mt-3 p-4 rounded-xl bg-slate-50/90 border border-slate-200 shadow-xs">
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
       <div>
-        <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 block" style="margin: 0 0 0.25rem !important;">Status</label>
-        <select name="status" style="max-width: none !important; height: 38px !important; padding: 0.4rem 0.6rem !important; border-radius: 0.375rem !important; font-size: 0.8125rem !important;" class="w-full bg-white border border-slate-300">
-          <option value="ALL" {% if filter_status == 'ALL' %}selected{% endif %}>All Statuses</option>
-          <option value="PENDING" {% if filter_status == 'PENDING' %}selected{% endif %}>Pending</option>
-          <option value="APPROVED" {% if filter_status == 'APPROVED' %}selected{% endif %}>Approved</option>
-          <option value="REJECTED" {% if filter_status == 'REJECTED' %}selected{% endif %}>Rejected</option>
-          <option value="DEEMED_APPROVED" {% if filter_status == 'DEEMED_APPROVED' %}selected{% endif %}>Deemed Approved</option>
-          <option value="WITHDRAWN" {% if filter_status == 'WITHDRAWN' %}selected{% endif %}>Withdrawn</option>
+        <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 block"
+          style="margin: 0 0 0.25rem !important;">Status</label>
+        <select name="status"
+          style="max-width: none !important; height: 38px !important; padding: 0.4rem 0.6rem !important; border-radius: 0.375rem !important; font-size: 0.8125rem !important;"
+          class="w-full bg-white border border-slate-300">
+          <option value="ALL" {% if filter_status=='ALL' %}selected{% endif %}>All Statuses</option>
+          <option value="PENDING" {% if filter_status=='PENDING' %}selected{% endif %}>Pending</option>
+          <option value="APPROVED" {% if filter_status=='APPROVED' %}selected{% endif %}>Approved</option>
+          <option value="REJECTED" {% if filter_status=='REJECTED' %}selected{% endif %}>Rejected</option>
+          <option value="DEEMED_APPROVED" {% if filter_status=='DEEMED_APPROVED' %}selected{% endif %}>Deemed Approved
+          </option>
+          <option value="WITHDRAWN" {% if filter_status=='WITHDRAWN' %}selected{% endif %}>Withdrawn</option>
         </select>
       </div>
       <div>
-        <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 block" style="margin: 0 0 0.25rem !important;">Block / Region</label>
-        <select name="block" style="max-width: none !important; height: 38px !important; padding: 0.4rem 0.6rem !important; border-radius: 0.375rem !important; font-size: 0.8125rem !important;" class="w-full bg-white border border-slate-300">
-          <option value="ALL" {% if filter_block == 'ALL' or not filter_block %}selected{% endif %}>All Blocks</option>
+        <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 block"
+          style="margin: 0 0 0.25rem !important;">Block / Region</label>
+        <select name="block"
+          style="max-width: none !important; height: 38px !important; padding: 0.4rem 0.6rem !important; border-radius: 0.375rem !important; font-size: 0.8125rem !important;"
+          class="w-full bg-white border border-slate-300">
+          <option value="ALL" {% if filter_block=='ALL' or not filter_block %}selected{% endif %}>All Blocks</option>
           {% for b in all_blocks %}
-          <option value="{{ b }}" {% if filter_block == b %}selected{% endif %}>{{ b }}</option>
+          <option value="{{ b }}" {% if filter_block==b %}selected{% endif %}>{{ b }}</option>
           {% endfor %}
         </select>
       </div>
       <div>
-        <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 block" style="margin: 0 0 0.25rem !important;">Gender</label>
-        <select name="gender" style="max-width: none !important; height: 38px !important; padding: 0.4rem 0.6rem !important; border-radius: 0.375rem !important; font-size: 0.8125rem !important;" class="w-full bg-white border border-slate-300">
-          <option value="ALL" {% if filter_gender == 'ALL' or not filter_gender %}selected{% endif %}>All Genders</option>
-          <option value="Female" {% if filter_gender == 'Female' %}selected{% endif %}>Female</option>
-          <option value="Male" {% if filter_gender == 'Male' %}selected{% endif %}>Male</option>
-          <option value="Other" {% if filter_gender == 'Other' %}selected{% endif %}>Other</option>
+        <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 block"
+          style="margin: 0 0 0.25rem !important;">Gender</label>
+        <select name="gender"
+          style="max-width: none !important; height: 38px !important; padding: 0.4rem 0.6rem !important; border-radius: 0.375rem !important; font-size: 0.8125rem !important;"
+          class="w-full bg-white border border-slate-300">
+          <option value="ALL" {% if filter_gender=='ALL' or not filter_gender %}selected{% endif %}>All Genders</option>
+          <option value="Female" {% if filter_gender=='Female' %}selected{% endif %}>Female</option>
+          <option value="Male" {% if filter_gender=='Male' %}selected{% endif %}>Male</option>
+          <option value="Other" {% if filter_gender=='Other' %}selected{% endif %}>Other</option>
         </select>
       </div>
     </div>
     <div class="flex justify-end gap-2 mt-3 pt-3 border-t border-slate-200">
-      <a href="/admin/applications" class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-300 no-underline">Clear</a>
-      <button type="submit" class="px-4 py-1.5 rounded-md text-xs font-semibold text-white bg-sky-700 hover:bg-sky-800 transition-colors shadow-2xs cursor-pointer">Apply Filters</button>
+      <a href="/admin/applications"
+        class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-300 no-underline">Clear</a>
+      <button type="submit"
+        class="px-4 py-1.5 rounded-md text-xs font-semibold text-white bg-sky-700 hover:bg-sky-800 transition-colors shadow-2xs cursor-pointer">Apply
+        Filters</button>
     </div>
   </div>
 </form>
@@ -193,7 +212,8 @@
             </div>
             <h4 class="text-base font-bold text-slate-900 mb-1">No applications found</h4>
             {% if q %}
-            <p class="text-xs text-slate-500 mb-0">Nothing matches &ldquo;<b>{{ q }}</b>&rdquo;. Try a different search keyword or filter.</p>
+            <p class="text-xs text-slate-500 mb-0">Nothing matches &ldquo;<b>{{ q }}</b>&rdquo;. Try a different search
+              keyword or filter.</p>
             {% else %}
             <p class="text-xs text-slate-500 mb-0">No applications match the current filter criteria.</p>
             {% endif %}

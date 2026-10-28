@@ -174,13 +174,9 @@
 
   <!-- Deadline Notice & Countdown in airy frosted styling -->
   <div class="mb-9 p-5 sm:p-6 rounded-2xl bg-white/75 border border-white/80 backdrop-blur-md shadow-lg shadow-sky-950/5 max-w-xl mx-auto">
-    <div class="flex items-center justify-center gap-2 mb-4 text-amber-700 font-medium text-xs sm:text-sm">
-      <span class="w-2 h-2 rounded-full bg-amber-500 inline-block shrink-0 animate-pulse"></span>
-      {% if hours_left is not none %}
-        <span>Application window closes in approximately {{ hours_left }} hours (midnight, 31 October).</span>
-      {% else %}
-        <span class="text-red-700 font-semibold">The application window for this scheme has closed.</span>
-      {% endif %}
+    <div class="flex items-center justify-center gap-2 mb-4 text-emerald-800 font-medium text-xs sm:text-sm">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0 animate-pulse"></span>
+      <span>Application window is open. Applications accepted continuously without closing.</span>
     </div>
 
     <!-- Live Countdown Timer -->

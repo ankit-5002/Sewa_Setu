@@ -13,4 +13,4 @@ RUN mkdir -p /var/sewasetu/uploads /var/log/sewasetu \
     && crontab /app/deploy/crontab
 
 EXPOSE 8000
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 4 --timeout 30 app:app"]
+CMD ["sh", "-c", "cron && uvicorn --app-dir /app mcp_servers.composite_asgi:asgi_application --host 0.0.0.0 --port ${PORT:-8000}"]

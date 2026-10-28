@@ -19,7 +19,25 @@ cookies*.txt
 .DS_Store
 Thumbs.db
 
-# Deployment guides & local docs
+# Uploads
+uploads/
+app/uploads/
+
 RENDER_DEPLOYMENT.md
 *_DEPLOYMENT.md
 
+# Tests
+tests/
+test_*.py
+
+# Documentation and project briefing pack
+Doc/
+01-PRD.md
+02-TRD.md
+03-APP-AND-AGENT-FLOWS.md
+04-DATA-AND-INTEGRATION-MAP.md
+05-MCP-AND-EVALUATION-SPEC.md
+06-UI-UX-BRIEF.md
+07-IMPLEMENTATION-PLAN.md
+progress.md
+README-FIRST.md

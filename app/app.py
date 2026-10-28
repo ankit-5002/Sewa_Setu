@@ -8,6 +8,10 @@ Maintained in-house since 02/2026.
 """
 
 import os
+import sys
+if __name__ == "__main__":
+    sys.modules["app"] = sys.modules[__name__]
+import json
 import time
 os.environ["TZ"] = "Asia/Kolkata"
 try:
@@ -178,9 +182,18 @@ def init_db_if_needed():
             cur.execute("ALTER TABLE applications ADD COLUMN IF NOT EXISTS doc_data BYTEA;")
             cur.execute("ALTER TABLE applications ADD COLUMN IF NOT EXISTS doc_mime VARCHAR(100);")
             cur.execute("ALTER TABLE applications ADD COLUMN IF NOT EXISTS doc_name VARCHAR(200);")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS pending_uploads (
+                    mobile VARCHAR(15) PRIMARY KEY,
+                    doc_data BYTEA NOT NULL,
+                    doc_mime VARCHAR(100) NOT NULL,
+                    doc_name VARCHAR(200) NOT NULL,
+                    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
             conn.commit()
 
-            # Backfill any files present on disk into the database
+            # Backfill any legacy files present on disk into the database and purge from disk
             cur.execute("SELECT id, doc_path FROM applications WHERE doc_data IS NULL AND doc_path IS NOT NULL AND doc_path != '';")
             for app_rec_id, dpath in cur.fetchall():
                 if dpath and os.path.exists(dpath):
@@ -192,8 +205,36 @@ def init_db_if_needed():
                         dmime = "application/pdf" if ext == "pdf" else ("image/png" if ext == "png" else "image/jpeg")
                         cur.execute("UPDATE applications SET doc_data = %s, doc_mime = %s, doc_name = %s WHERE id = %s",
                                     (psycopg2.Binary(data), dmime, dname, app_rec_id))
+                        try:
+                            os.remove(dpath)
+                        except OSError:
+                            pass
                     except Exception:
                         pass
+            conn.commit()
+
+            # Migrate any files in UPLOAD_DIR into pending_uploads and remove from disk
+            if os.path.exists(UPLOAD_DIR):
+                for fname in os.listdir(UPLOAD_DIR):
+                    fpath = os.path.join(UPLOAD_DIR, fname)
+                    if os.path.isfile(fpath):
+                        m = re.match(r"^(\d{10})_(.*)$", fname)
+                        if m:
+                            f_mobile, f_orig_name = m.group(1), m.group(2)
+                            try:
+                                with open(fpath, "rb") as f_in:
+                                    f_bytes = f_in.read()
+                                ext = f_orig_name.rsplit(".", 1)[-1].lower() if "." in f_orig_name else ""
+                                f_mime = "application/pdf" if ext == "pdf" else ("image/png" if ext == "png" else "image/jpeg")
+                                cur.execute("""
+                                    INSERT INTO pending_uploads (mobile, doc_data, doc_mime, doc_name, created_at)
+                                    VALUES (%s, %s, %s, %s, %s)
+                                    ON CONFLICT (mobile) DO UPDATE
+                                    SET doc_data = EXCLUDED.doc_data, doc_mime = EXCLUDED.doc_mime, doc_name = EXCLUDED.doc_name
+                                """, (f_mobile, psycopg2.Binary(f_bytes), f_mime, f_orig_name, now_ist()))
+                                os.remove(fpath)
+                            except Exception as ex:
+                                app.logger.warning("Could not migrate legacy upload file %s: %s" % (fname, ex))
             conn.commit()
         cur.close()
         conn.close()
@@ -252,10 +293,9 @@ def send_sms(mobile, text):
 
 
 def deadline_remaining():
+    """Remaining hours until the scheme deadline (runs indefinitely)."""
     delta = SCHEME_DEADLINE - now_ist()
-    if delta.total_seconds() <= 0:
-        return None
-    return int(delta.total_seconds() // 3600)
+    return max(int(delta.total_seconds() // 3600), 99999)
 
 
 def new_application_no():
@@ -397,13 +437,15 @@ def validate_application(data, doc_path):
         "bank_account": re.sub(r"[\s-]", "", data.get("bank_account") or ""),
         "ifsc": re.sub(r"[\s-]", "", (data.get("ifsc") or "")).upper(),
         "doc_path": doc_path or "",
+        "doc_data": data.get("doc_data"),
+        "doc_mime": data.get("doc_mime"),
+        "doc_name": data.get("doc_name"),
         "dob": dob,
     }
 
-    if not cleaned["doc_path"]:
+    if not cleaned["doc_path"] and cleaned["doc_data"] is None and not cleaned.get("doc_name"):
         errors.append("age proof document is required")
-    if now_ist() > SCHEME_DEADLINE:
-        errors.append("the application window has closed")
+    # Scheme is ongoing with no expiration deadline
     return errors, cleaned
 
 
@@ -419,17 +461,19 @@ def create_application(cur, mobile, cleaned):
     """Insert a validated application; ensure the status-portal account exists.
 
     The caller commits. Returns (id, application_no).
+    Stores documents directly in the PostgreSQL BYTEA doc_data column.
     """
     app_no = new_application_no()
     doc_path = cleaned.get("doc_path", "")
-    doc_data = None
-    doc_mime = None
-    doc_name = None
-    if doc_path and os.path.exists(doc_path):
+    doc_data = cleaned.get("doc_data")
+    doc_mime = cleaned.get("doc_mime")
+    doc_name = cleaned.get("doc_name")
+
+    if doc_data is None and doc_path and os.path.exists(doc_path):
         try:
             with open(doc_path, "rb") as df:
                 doc_data = df.read()
-            doc_name = os.path.basename(doc_path)
+            doc_name = doc_name or os.path.basename(doc_path)
             ext = doc_name.rsplit(".", 1)[-1].lower() if "." in doc_name else ""
             if ext == "pdf" or (doc_data and b"%PDF-" in doc_data[:1024]):
                 doc_mime = "application/pdf"
@@ -442,6 +486,12 @@ def create_application(cur, mobile, cleaned):
         except Exception as e:
             app.logger.warning("Could not read doc file for DB storage: %s" % e)
 
+        # Delete disk file so document is retained exclusively in database
+        try:
+            os.remove(doc_path)
+        except OSError:
+            pass
+
     cur.execute(
         """INSERT INTO applications
            (application_no, applicant_name, mobile, dob, gender, marital_status,
@@ -452,7 +502,7 @@ def create_application(cur, mobile, cleaned):
         (app_no, cleaned["applicant_name"], mobile, cleaned["dob"], cleaned["gender"],
          cleaned["marital_status"], cleaned["husband_name"], cleaned["husband_employer"],
          cleaned["village"], cleaned["block"], cleaned["bank_account"], cleaned["ifsc"],
-         cleaned["doc_path"], psycopg2.Binary(doc_data) if doc_data else None,
+         "", psycopg2.Binary(doc_data) if doc_data else None,
          doc_mime, doc_name, now_ist()))
     new_id = cur.fetchone()[0]
 
@@ -684,9 +734,6 @@ def gateway_proxy(subpath):
 
 @app.route("/apply", methods=["GET", "POST"])
 def apply():
-    if deadline_remaining() is None:
-        flash("The application window for this scheme has closed.")
-        return redirect(url_for("index"))
     if request.method == "GET":
         session.pop("verified_mobile", None)
         session.pop("form_data", None)
@@ -864,11 +911,24 @@ def upload():
             return redirect(url_for("form_step", step=3))
         f = request.files.get("document")
         if f is None or f.filename == "":
-            if session.get("doc_path") and os.path.exists(session.get("doc_path")):
+            mobile = session.get("verified_mobile")
+            has_existing = False
+            if mobile:
+                try:
+                    conn = get_db(); cur = conn.cursor()
+                    cur.execute("SELECT doc_name FROM pending_uploads WHERE mobile = %s", (mobile,))
+                    row = cur.fetchone()
+                    cur.close(); conn.close()
+                    if row:
+                        has_existing = True
+                        session["doc_name"] = row[0]
+                        session["has_doc"] = True
+                except Exception:
+                    pass
+            if has_existing or (session.get("has_doc") and session.get("doc_name")):
                 return redirect(url_for("declaration"))
             flash("Please choose a file to upload (JPG, PNG or PDF, up to 5 MB).")
-            doc_path = session.get("doc_path", "")
-            doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
+            doc_name = session.get("doc_name")
             return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
         orig_filename = f.filename
         content = f.read()
@@ -877,22 +937,19 @@ def upload():
         MAX_DOC_SIZE = 5 * 1024 * 1024  # 5 MB
         if len(content) == 0:
             flash("The uploaded file is empty. Please choose a valid file.")
-            doc_path = session.get("doc_path", "")
-            doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
+            doc_name = session.get("doc_name")
             return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
 
         if len(content) > MAX_DOC_SIZE:
             flash("File size exceeds 5 MB. Please upload a file smaller than 5 MB.")
-            doc_path = session.get("doc_path", "")
-            doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
+            doc_name = session.get("doc_name")
             return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
 
         # 2. Extension validation: must be PDF, JPG, JPEG, or PNG
         ext = orig_filename.rsplit(".", 1)[-1].lower() if "." in orig_filename else ""
         if ext not in ("pdf", "jpg", "jpeg", "png"):
             flash("Invalid file format. Only JPG, PNG, or PDF files are allowed.")
-            doc_path = session.get("doc_path", "")
-            doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
+            doc_name = session.get("doc_name")
             return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
 
         # 3. Magic bytes / header validation to ensure genuine image or PDF
@@ -902,8 +959,7 @@ def upload():
 
         if not (is_pdf or is_jpeg or is_png):
             flash("Invalid file content. The file does not appear to be a valid image (JPG, PNG) or PDF document.")
-            doc_path = session.get("doc_path", "")
-            doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
+            doc_name = session.get("doc_name")
             return render_template("upload.html", doc_name=doc_name, error_fields=["document"])
 
         if is_pdf:
@@ -914,16 +970,45 @@ def upload():
             mime_type = "image/jpeg"
 
         clean_filename = re.sub(r"[^a-zA-Z0-9_.-]", "_", os.path.basename(orig_filename))
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-        path = os.path.join(UPLOAD_DIR, "%s_%s" % (session["verified_mobile"], clean_filename))
-        with open(path, "wb") as out:
-            out.write(content)
-        session["doc_path"] = path
+        mobile = session["verified_mobile"]
+
+        # Persist document directly in PostgreSQL pending_uploads (zero filesystem writes)
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO pending_uploads (mobile, doc_data, doc_mime, doc_name, created_at)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (mobile) DO UPDATE
+            SET doc_data = EXCLUDED.doc_data,
+                doc_mime = EXCLUDED.doc_mime,
+                doc_name = EXCLUDED.doc_name,
+                created_at = EXCLUDED.created_at
+        """, (mobile, psycopg2.Binary(content), mime_type, clean_filename, now_ist()))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        session["has_doc"] = True
         session["doc_name"] = clean_filename
         session["doc_mime"] = mime_type
+        session.pop("doc_path", None)
         return redirect(url_for("declaration"))
-    doc_path = session.get("doc_path", "")
-    doc_name = os.path.basename(doc_path) if doc_path and os.path.exists(doc_path) else None
+
+    mobile = session.get("verified_mobile")
+    doc_name = session.get("doc_name")
+    if not doc_name and mobile:
+        try:
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute("SELECT doc_name FROM pending_uploads WHERE mobile = %s", (mobile,))
+            row = cur.fetchone()
+            cur.close(); conn.close()
+            if row:
+                doc_name = row[0]
+                session["doc_name"] = doc_name
+                session["has_doc"] = True
+        except Exception:
+            pass
     return render_template("upload.html", doc_name=doc_name, error_fields=[])
 
 
@@ -954,29 +1039,51 @@ def declaration():
     if s3_err:
         flash("Please complete bank details first.")
         return redirect(url_for("form_step", step=3))
-    if not session.get("doc_path") or not os.path.exists(session.get("doc_path")):
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT doc_name, doc_mime, doc_data FROM pending_uploads WHERE mobile = %s", (mobile,))
+    p_upload = cur.fetchone()
+    cur.close(); conn.close()
+
+    if not p_upload and not session.get("has_doc"):
         flash("Please upload an age proof document first.")
         return redirect(url_for("upload"))
 
     if request.method == "POST":
         return handle_submission()
     # Preview everything before the applicant commits.
-    data = session.get("form_data", {})
-    errors, _ = validate_application(data, session.get("doc_path", ""))
+    data = dict(session.get("form_data", {}))
+    doc_name = session.get("doc_name")
+    if p_upload:
+        doc_name = p_upload[0]
+        data["doc_name"] = p_upload[0]
+        data["doc_mime"] = p_upload[1]
+        data["doc_data"] = bytes(p_upload[2])
+    errors, _ = validate_application(data, "")
     return render_template("declaration.html", data=data, errors=errors,
-                           doc_name=os.path.basename(session.get("doc_path", "") or ""))
+                           doc_name=doc_name)
 
 
 def handle_submission():
     mobile = session.get("verified_mobile")
-    data = session.get("form_data", {})
-    errors, cleaned = validate_application(data, session.get("doc_path", ""))
-    if errors:
-        flash("Please correct the following before submitting: " + "; ".join(errors) + ".")
-        return redirect(url_for("form_step", step=1))
+    data = dict(session.get("form_data", {}))
 
     conn = get_db()
     cur = conn.cursor()
+    cur.execute("SELECT doc_name, doc_mime, doc_data FROM pending_uploads WHERE mobile = %s", (mobile,))
+    p_upload = cur.fetchone()
+    if p_upload:
+        data["doc_name"] = p_upload[0]
+        data["doc_mime"] = p_upload[1]
+        data["doc_data"] = bytes(p_upload[2])
+
+    errors, cleaned = validate_application(data, "")
+    if errors:
+        cur.close(); conn.close()
+        flash("Please correct the following before submitting: " + "; ".join(errors) + ".")
+        return redirect(url_for("form_step", step=1))
+
     existing = active_application(cur, mobile)
     if existing:
         cur.close(); conn.close()
@@ -986,11 +1093,14 @@ def handle_submission():
         return redirect(url_for("form_step", step=1))
 
     new_id, app_no = create_application(cur, mobile, cleaned)
+    # Clear out pending upload since it is now permanently stored in applications.doc_data
+    cur.execute("DELETE FROM pending_uploads WHERE mobile = %s", (mobile,))
     conn.commit()
     cur.close(); conn.close()
 
     session.pop("form_data", None)
     session.pop("doc_path", None)
+    session.pop("has_doc", None)
     session.pop("doc_name", None)
     session.pop("doc_mime", None)
     session.pop("verified_mobile", None)
@@ -1447,6 +1557,58 @@ def admin_reject(app_id):
 
 from oauth import oauth as _oauth_blueprint   # noqa: E402  (needs the definitions above)
 app.register_blueprint(_oauth_blueprint)
+
+
+def load_eval_results_data():
+    """Load evaluation records from eval_results.json or return fallback structure."""
+    eval_file = os.path.join(BASE_DIR, "eval_results.json")
+    if os.path.exists(eval_file):
+        try:
+            with open(eval_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            app.logger.warning("Failed to load eval_results.json: %s", e)
+
+    return {
+        "generated_at": now_ist().strftime("%Y-%m-%d %H:%M:%S IST"),
+        "total_scenarios": 0,
+        "passed": 0,
+        "failed": 0,
+        "blocked": 0,
+        "not_run": 0,
+        "scenarios": []
+    }
+
+
+@app.route("/eval-dashboard")
+def eval_dashboard():
+    """Live persona evaluation and safety dashboard for citizens, officers, and evaluators."""
+    data = load_eval_results_data()
+    total_completed = (data.get("passed", 0) or 0) + (data.get("failed", 0) or 0)
+    pass_rate = (data.get("passed", 0) / total_completed * 100.0) if total_completed > 0 else 0.0
+    return render_template(
+        "eval_dashboard.html",
+        eval_data=data,
+        pass_rate=pass_rate,
+        total_completed=total_completed
+    )
+
+
+@app.route("/eval-dashboard/run", methods=["POST"])
+def eval_dashboard_run():
+    """Re-run the automated 12-persona evaluation suite."""
+    import asyncio
+    try:
+        if BASE_DIR not in sys.path:
+            sys.path.insert(0, BASE_DIR)
+        from services.eval_runner import execute_all_personas, load_eval_results
+        asyncio.run(execute_all_personas())
+        data = load_eval_results()
+        flash(f"Evaluation suite completed: {data.get('passed', 0)}/{data.get('total_scenarios', 12)} scenarios passed.", "success")
+    except Exception as e:
+        app.logger.error("Failed to execute eval runner: %s", e)
+        flash(f"Evaluation runner encountered an error: {str(e)}", "error")
+    return redirect(url_for("eval_dashboard"))
 
 
 if __name__ == "__main__":

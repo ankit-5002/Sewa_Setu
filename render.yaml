@@ -6,12 +6,15 @@ services:
     dockerContext: ./app
     plan: free
     region: oregon
+    healthCheckPath: /eval-dashboard
     envVars:
       - key: DATABASE_URL
         sync: false
       - key: ADMIN_USERNAME
         value: admin
       - key: ADMIN_PASSWORD
+        sync: false
+      - key: PUBLIC_BASE_URL
         sync: false
       - key: SECRET_KEY
         generateValue: true

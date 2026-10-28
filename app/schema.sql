@@ -26,6 +26,15 @@ CREATE TABLE IF NOT EXISTS applications (
     decided_by      VARCHAR(50)
 );
 
+-- In-progress document uploads for web applications (stored in DB, zero disk footprint)
+CREATE TABLE IF NOT EXISTS pending_uploads (
+    mobile       VARCHAR(15) PRIMARY KEY,
+    doc_data     BYTEA NOT NULL,
+    doc_mime     VARCHAR(100) NOT NULL,
+    doc_name     VARCHAR(200) NOT NULL,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Status portal accounts (created at submission time)
 CREATE TABLE IF NOT EXISTS portal_users (
     mobile        VARCHAR(15) PRIMARY KEY,
