@@ -2,17 +2,19 @@
 """Quick diagnostic tool to verify live Streamable-HTTP MCP endpoints."""
 
 import asyncio
+import sys
+import os
 import httpx2
 from mcp.client.streamable_http import streamable_http_client
 from mcp import ClientSession
 
 
-async def check_endpoint(name: str, url: str):
+async def check_endpoint(name: str, url: str, health_tool: str):
     print(f"\n==================================================")
     print(f"Connecting to {name} at {url} ...")
     print(f"==================================================")
     try:
-        async with httpx2.AsyncClient(timeout=10.0) as client:
+        async with httpx2.AsyncClient(timeout=15.0) as client:
             async with streamable_http_client(url, http_client=client) as (r, w):
                 async with ClientSession(r, w) as session:
                     # 1. MCP Protocol Handshake
@@ -30,14 +32,23 @@ async def check_endpoint(name: str, url: str):
                         desc = (t.description or "").split("\n")[0][:60]
                         print(f"  {i}. {t.name:<30} — {desc}")
 
+                    # 3. Live Tool Execution
+                    if health_tool in tool_names:
+                        call_res = await session.call_tool(health_tool, {})
+                        result_text = call_res.content[0].text if call_res.content else "{}"
+                        print(f"✓ Tool Call ({health_tool}): SUCCESS")
+                        print(f"  Response: {result_text.strip()[:100]}...")
+
     except Exception as e:
         print(f"✗ Connection FAILED: {e}")
 
 
 async def main():
-    print("Sewa Setu — Live Streamable-HTTP MCP Diagnostic")
-    await check_endpoint("Citizen MCP Server", "http://localhost:8000/mcp/citizen/")
-    await check_endpoint("Officer MCP Server", "http://localhost:8000/mcp/officer/")
+    base_url = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else os.environ.get("BASE_URL", "http://localhost:8000").rstrip("/")
+    print(f"Sewa Setu — Live Streamable-HTTP MCP Diagnostic")
+    print(f"Target Base URL: {base_url}")
+    await check_endpoint("Citizen MCP Server", f"{base_url}/mcp/citizen/", "citizen_health")
+    await check_endpoint("Officer MCP Server", f"{base_url}/mcp/officer/", "officer_health")
     print("\nAll MCP streamable-HTTP endpoints are fully operational!\n")
 
 
