@@ -57,6 +57,9 @@ class MCPBrowserDocumentationMiddleware(BaseHTTPMiddleware):
   <meta charset="utf-8">
   <title>Sewa Setu — MCP {server_type} Service Endpoint</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="googlebot" content="noindex, nofollow">
+  <meta name="description" content="Technical developer documentation and status page for Model Context Protocol (MCP) streamable-HTTP server.">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen p-6 flex flex-col justify-between">
@@ -78,6 +81,10 @@ class MCPBrowserDocumentationMiddleware(BaseHTTPMiddleware):
       <div class="p-4 rounded-xl bg-sky-50/70 border border-sky-100 text-sky-950">
         <p class="font-semibold text-sky-900 text-xs uppercase tracking-wider mb-1">Developer &amp; Evaluator Notice</p>
         <p class="text-xs text-sky-800 leading-normal">This URL is a dedicated <strong>Streamable-HTTP Model Context Protocol (MCP)</strong> API endpoint intended for AI assistants and MCP clients (such as Claude Desktop, Cursor, or the evaluation runner). It carries out {desc}.</p>
+      </div>
+
+      <div class="text-[11px] text-slate-500 bg-slate-100 p-2.5 rounded-lg border border-slate-200">
+        <strong>Academic &amp; Evaluation Sandbox:</strong> This endpoint is an automated Model Context Protocol API service for software assessment. It does not solicit or collect personal credentials, passwords, or financial data from website visitors.
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -110,7 +117,14 @@ class MCPBrowserDocumentationMiddleware(BaseHTTPMiddleware):
   </footer>
 </body>
 </html>"""
-                return HTMLResponse(content=html, status_code=200)
+                return HTMLResponse(
+                    content=html,
+                    status_code=200,
+                    headers={
+                        "X-Robots-Tag": "noindex, nofollow, noarchive",
+                        "Cache-Control": "no-cache, no-store, must-revalidate"
+                    }
+                )
         return await call_next(request)
 
 citizen_asgi = create_citizen_asgi_app(streamable_http_path="/")
