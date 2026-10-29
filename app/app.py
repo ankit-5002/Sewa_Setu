@@ -1611,5 +1611,11 @@ def eval_dashboard_run():
     return redirect(url_for("eval_dashboard"))
 
 
+@app.after_request
+def add_security_headers(response):
+    response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
+    return response
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=False)

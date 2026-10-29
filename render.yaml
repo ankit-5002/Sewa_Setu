@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: sewasetu-portal
+    name: pension-assistant-eval
     runtime: docker
     dockerfilePath: ./app/Dockerfile
     dockerContext: ./app
